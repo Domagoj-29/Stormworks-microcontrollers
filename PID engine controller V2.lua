@@ -1,4 +1,10 @@
-function pid(p,i,d)
+-- Author: Domagoj29
+-- GitHub: https://github.com/Domagoj-29
+-- Workshop: https://steamcommunity.com/profiles/76561198935577915/myworkshopfiles/
+
+-- onTick functions
+
+local function pid(p,i,d)
 	return {
 		p=p,i=i,d=d,
 		E=0,D=0,I=0,
@@ -15,14 +21,14 @@ function pid(p,i,d)
 		return math.max(0,math.min(output,1))
 	end }
 end
-function linearInterpolation(x,x1,x2,y1,y2)
+local function linearInterpolation(x,x1,x2,y1,y2)
 	return y1+((x-x1)*(y2-y1)/(x2-x1))
 end
-function clamp(value,min,max)
+local function clamp(value,min,max)
 	value=math.max(min,math.min(value,max))
 	return value
 end
-function createDelta()
+local function createDelta()
 	local oldVariable=0
 	return function(variable)
 		local delta=variable-oldVariable
@@ -30,7 +36,7 @@ function createDelta()
 		return delta
 	end
 end
-function createUpDown(startValue)
+local function createUpDown(startValue)
 	local counter=startValue
 	return function(down,up,increment,min,max)
 		if down then
@@ -43,7 +49,7 @@ function createUpDown(startValue)
 		return counter
 	end
 end
-pid1=pid(0.18,0.0003,0.02)
+local pid1=pid(0.18,0.0003,0.02)
 delta=createDelta()
 upDownAFR=createUpDown(0.5)
 upDownAlternator=createUpDown(0)
