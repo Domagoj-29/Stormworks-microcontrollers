@@ -17,7 +17,11 @@ local function createPID()
 		local error=setpoint-processVariable
 		local derivative=error-oldError
 		oldError=error
-		integral=integral+error*I
+		if math.abs(error)<2 then
+			integral=integral+error*I
+		else
+			integral=integral*0.9
+		end
 
 		return error*P+integral+derivative*D
 	end
@@ -50,7 +54,7 @@ local function createUpDown(startValue)
 		return counter
 	end
 end
---local pid1=pid(0.18,0.0003,0.02)
+
 local delta=createDelta()
 local throttlePID=createPID()
 local upDownAFR=createUpDown(0.5)
@@ -68,6 +72,9 @@ MinThrottle=property.getNumber("Min throttle")
 MaxThrottle=property.getNumber("Max throttle")
 
 DynamicIdleRPS=property.getBool("Dynamic idle RPS")
+
+IdleRPS=MinimumIdleRPS
+
 function onTick()
 	local air=input.getNumber(1)
 	local fuel=input.getNumber(2)
@@ -76,9 +83,9 @@ function onTick()
 	local crankshaftRPS=input.getNumber(5)
 	local batteryCharge=input.getNumber(6)
 
-    local engine=input.getBool(1)
+	local engine=input.getBool(1)
 
-    if engine and engineTemperature<OverheatingProtectionThreshold then
+	if engine and engineTemperature<OverheatingProtectionThreshold then
 		local deltaBatteryCharge=delta(batteryCharge)
 		if DynamicIdleRPS then
 			IdleRPS=MinimumIdleRPS+upDownDynamicThrottle(batteryCharge>MaxBatteryCharge-0.003 or deltaBatteryCharge>0.00000015,batteryCharge<MaxBatteryCharge-0.004 and deltaBatteryCharge<0.0000001,0.01,0,MaxRPS-IdleRPS)
@@ -89,7 +96,7 @@ function onTick()
 		--local engineThrottle=clamp(throttle,1/MaxRPS*IdleRPS,2)
 		--engineThrottle=engineThrottle*MaxRPS
 
-		local airManifold=clamp(throttlePID(engineThrottle,crankshaftRPS,0.18,0.0003,0.02,true),0,1)
+		local airManifold=throttlePID(engineThrottle,crankshaftRPS,0.18,0.0003,0.02,true)
 
 		local realAFR=air/fuel
 		local stoichiometryFormula=clamp(engineTemperature*0.004,0,0.4)
@@ -98,7 +105,7 @@ function onTick()
 
 		local starter=crankshaftRPS<2.1
 
-		local clutch=((throttle<0.01 or crankshaftRPS<IdleRPS+0.1) and 0 or crankshaftRPS*(1/MaxClutchRPS))
+		local clutch=((throttle<0.01 or crankshaftRPS<2.1) and 0 or crankshaftRPS*(1/MaxClutchRPS))
 
 		local fluidPump=clamp(engineTemperature*(1/MaxFluidPumpTemperature),0,1)
 		local radiatorFan=engineTemperature>RadiatorFanTemperatureThreshold
@@ -114,7 +121,7 @@ function onTick()
 		output.setBool(1,starter)
 		output.setBool(2,radiatorFan)
 	else
-        throttlePID(0,0,0,0,0,false)
+		throttlePID(0,0,0,0,0,false)
 
 		output.setNumber(1,0)
 		output.setNumber(2,0)
