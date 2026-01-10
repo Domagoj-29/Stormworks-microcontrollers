@@ -105,7 +105,7 @@ function onTick()
 
 		local starter=crankshaftRPS<2.1
 
-		local clutch=((throttle<0.01 or crankshaftRPS<2.1) and 0 or crankshaftRPS*(1/MaxClutchRPS))
+		local clutch=((throttle<0.0001 or crankshaftRPS<2.1) and 0 or crankshaftRPS*(1/MaxClutchRPS))
 
 		local fluidPump=clamp(engineTemperature*(1/MaxFluidPumpTemperature),0,1)
 		local radiatorFan=engineTemperature>RadiatorFanTemperatureThreshold
