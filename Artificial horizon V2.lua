@@ -2,6 +2,9 @@
 -- GitHub: https://github.com/Domagoj-29
 -- Workshop: https://steamcommunity.com/profiles/76561198935577915/myworkshopfiles/
 
+-- Credits:
+-- NJ Modular Artificial Horizon: https://steamcommunity.com/sharedfiles/filedetails/?id=2471103899
+
 -- Tables start at the lowest pitch line
 PitchLineDistance={35,28,21,14,7,-7,-14,-21,-28,-35}
 PitchLineHalfLength={6,5,4,3,2,2,3,4,5,6}
