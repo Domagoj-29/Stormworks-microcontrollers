@@ -2,6 +2,9 @@
 -- GitHub: https://github.com/Domagoj-29
 -- Workshop: https://steamcommunity.com/profiles/76561198935577915/myworkshopfiles/
 
+-- Credits:
+-- Reverse Camera Script NOT MINE JUST REVERSE ENGINEERED: https://steamcommunity.com/sharedfiles/filedetails/?id=1871351842
+
 local steering=0
 function onTick()
 	steering=input.getNumber(1)
