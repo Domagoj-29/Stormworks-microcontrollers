@@ -1,3 +1,7 @@
+-- Author: Domagoj29
+-- GitHub: https://github.com/Domagoj-29
+-- Workshop: https://steamcommunity.com/profiles/76561198935577915/myworkshopfiles/
+
 function linearInterpolation(x,x1,x2,y1,y2)
 	return y1+((x-x1)*(y2-y1)/(x2-x1))
 end
@@ -157,5 +161,4 @@ function onDraw()
 		screen.drawRectF(1,playerY,3,3)
 		screen.drawText(16,1,string.format("%03d",score))
 	end
-
 end
