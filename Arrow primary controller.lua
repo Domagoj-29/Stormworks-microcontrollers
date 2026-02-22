@@ -1,3 +1,10 @@
+-- Author: Domagoj29
+-- GitHub: https://github.com/Domagoj-29
+-- Workshop: https://steamcommunity.com/profiles/76561198935577915/myworkshopfiles/
+
+-- Credits: 
+-- AIM-9X MANPAD (IFF SYSTEM and RADAR HUD): https://steamcommunity.com/sharedfiles/filedetails/?id=2874054983
+
 function getHighlightColor(isSelected)
 	if isSelected then
 		return 120,0,0
