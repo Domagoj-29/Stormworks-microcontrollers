@@ -2,6 +2,9 @@
 -- GitHub: https://github.com/Domagoj-29
 -- Workshop: https://steamcommunity.com/profiles/76561198935577915/myworkshopfiles/
 
+-- Credits:
+-- ZE Coaxial Gyro: https://steamcommunity.com/sharedfiles/filedetails/?id=2395007026
+
 -- onTick functions
 
 local function createCapacitor()
