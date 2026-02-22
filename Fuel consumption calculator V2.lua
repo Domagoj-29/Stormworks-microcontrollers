@@ -1,3 +1,10 @@
+-- Author: Domagoj29
+-- GitHub: https://github.com/Domagoj-29
+-- Workshop: https://steamcommunity.com/profiles/76561198935577915/myworkshopfiles/
+
+-- Credits:
+-- Engine Based Fuel Calculator (L/sec, Total): https://steamcommunity.com/sharedfiles/filedetails/?id=3263506962
+
 local totalConsumption=0
 function onTick()
 	local cylinderCount=property.getNumber("Cylinder count")
