@@ -110,6 +110,19 @@ local function createUpDown(startValue)
 		return counter
 	end
 end
+local function createSRlatch()
+	local output=false
+	return function(set,reset)
+		if set and reset then
+			output=false
+		elseif set then
+			output=true
+		elseif reset then
+			output=false
+		end
+		return output
+	end
+end
 local function waypointDistance(gpsX,gpsY,waypointX,waypointY,speed)
 	local differenceX=waypointX-gpsX
 	local differenceY=waypointY-gpsY
@@ -118,6 +131,8 @@ local function waypointDistance(gpsX,gpsY,waypointX,waypointY,speed)
 	return distance,estimate
 end
 
+local negativeSpeedSRlatch=createSRlatch()
+local scrollSRlatch=createSRlatch()
 local dataButtonPushToToggle=createPushToToggle()
 local drawLinePushToToggle=createPushToToggle()
 local zoomUpDown=createUpDown(1)
@@ -151,10 +166,12 @@ SpeedThreshold=property.getNumber("Minimum speed for time estimate (m/s)")
 IsOverlayEnabled=property.getBool("Compass overlay")
 PointerType=property.getBool("Pointer") -- off=square on=triangle
 MapMovementSquarePointer=property.getBool("Square pointer during map movement")
+InvertBearing=property.getBool("Invert bearing when reversing")
 
 function onTick()
 	GpsX=input.getNumber(1)
 	GpsY=input.getNumber(3)
+	local directionalSpeed=input.getNumber(9)
 	Speed=input.getNumber(13)
 	CompassDegrees=(-input.getNumber(17)*360+360)%360
 
@@ -164,6 +181,11 @@ function onTick()
 	WaypointY=input.getNumber(21)
 
 	local isPressed=input.getBool(1)
+
+	local isNegativeSpeed=negativeSpeedSRlatch(directionalSpeed<-1,directionalSpeed>1) and InvertBearing
+	if isNegativeSpeed then
+		CompassDegrees=(CompassDegrees+180)%360
+	end
 
 	VerticalGap=clamp((h/32-1),0,2)*2
 
@@ -216,8 +238,9 @@ function onTick()
 		ScreenWaypointX,ScreenWaypointY=map.mapToScreen(StoredX,StoredY,Zoom,w,h,WaypointX,WaypointY)
 	else
 		Distance,Estimate=waypointDistance(GpsX,GpsY,WaypointX,WaypointY,Speed)
-		if h<35 then
-			ScrollY=scrollUpDown(down and not dataMode,up and not dataMode,1,-21,0,WaypointX==0 and WaypointY==0)
+		if h==32 then
+			local scrollDown=scrollSRlatch(down and not dataMode,(up and not dataMode) or (WaypointX==0 and WaypointY==0))
+			ScrollY=scrollUpDown(scrollDown,not scrollDown,1,-21,0,false)
 		else
 			ScrollY=0
 		end
@@ -297,26 +320,26 @@ function onDraw()
 	else
 		local digitCount=string.len(string.format("%.0f",CompassDegrees))
 		screen.setColor(0,0,0)
-		screen.drawTextBox(w/2-17,2+ScrollY,35,5,string.format("%.0f",GpsX),0)
-		screen.drawTextBox(w/2-17,9+ScrollY+VerticalGap,35,5,string.format("%.0f",GpsY),0)
-		screen.drawTextBox(w/2-7,16+ScrollY+VerticalGap*2,15,5,string.format("%.0f",CompassDegrees),0)
-		screen.drawCircle((w/2-7)+round((15-digitCount*5)/2)+(digitCount*5+1),16+ScrollY+VerticalGap*2,1)-- Formula for textBox center alignment, alignedX=textBoxX+(textBoxWidth-textWidth)/2
+		screen.drawTextBox(w/2-17,(h/2-14)+ScrollY-VerticalGap*4,35,5,string.format("%.0f",GpsX),0)
+		screen.drawTextBox(w/2-17,(h/2-7)+ScrollY-VerticalGap*3,35,5,string.format("%.0f",GpsY),0)
+		screen.drawTextBox(w/2-7,h/2+ScrollY-VerticalGap*2,15,5,string.format("%.0f",CompassDegrees),0)
+		screen.drawCircle((w/2-7)+round((15-digitCount*5)/2)+(digitCount*5+1),h/2+ScrollY-VerticalGap*2,1)-- Formula for textBox center alignment, alignedX=textBoxX+(textBoxWidth-textWidth)/2
 		if waypointSet then
-			screen.drawTextBox(w/2-14,23+ScrollY+VerticalGap*3,30,5,string.format("%.".. 3-string.len(math.floor(Distance)) .."f",Distance).."km",0) -- Depending on digit count the number will have more or less decimal places
+			screen.drawTextBox(w/2-14,(h/2+7)+ScrollY-VerticalGap,30,5,string.format("%.".. 3-string.len(math.floor(Distance)) .."f",Distance).."km",0) -- Depending on digit count the number will have more or less decimal places
 			if Speed>SpeedThreshold then
-				screen.drawTextBox(w/2-9,30+ScrollY+VerticalGap*4,20,5,string.format("%.0f",Estimate).."m",0)
+				screen.drawTextBox(w/2-9,(h/2+14)+ScrollY,20,5,string.format("%.0f",Estimate).."m",0)
 			end
 		end
 
 		screen.setColor(UiR,UiG,UiB)
-		screen.drawTextBox(w/2-18,2+ScrollY,35,5,string.format("%.0f",GpsX),0)
-		screen.drawTextBox(w/2-18,9+ScrollY+VerticalGap,35,5,string.format("%.0f",GpsY),0)
-		screen.drawTextBox(w/2-8,16+ScrollY+VerticalGap*2,15,5,string.format("%.0f",CompassDegrees),0)
-		screen.drawCircle((w/2-8)+round((15-digitCount*5)/2)+(digitCount*5+1),16+ScrollY+VerticalGap*2,1)
+		screen.drawTextBox(w/2-18,(h/2-14)+ScrollY-VerticalGap*4,35,5,string.format("%.0f",GpsX),0)
+		screen.drawTextBox(w/2-18,(h/2-7)+ScrollY-VerticalGap*3,35,5,string.format("%.0f",GpsY),0)
+		screen.drawTextBox(w/2-8,h/2+ScrollY-VerticalGap*2,15,5,string.format("%.0f",CompassDegrees),0)
+		screen.drawCircle((w/2-8)+round((15-digitCount*5)/2)+(digitCount*5+1),h/2+ScrollY-VerticalGap*2,1)
 		if waypointSet then
-			screen.drawTextBox(w/2-15,23+ScrollY+VerticalGap*3,30,5,string.format("%.".. 3-string.len(math.floor(Distance)) .."f",Distance).."km",0)
+			screen.drawTextBox(w/2-15,(h/2+7)+ScrollY-VerticalGap,30,5,string.format("%.".. 3-string.len(math.floor(Distance)) .."f",Distance).."km",0)
 			if Speed>SpeedThreshold then
-				screen.drawTextBox(w/2-10,30+ScrollY+VerticalGap*4,20,5,string.format("%.0f",Estimate).."m",0)
+				screen.drawTextBox(w/2-10,(h/2+14)+ScrollY,20,5,string.format("%.0f",Estimate).."m",0)
 			end
 		end
 
