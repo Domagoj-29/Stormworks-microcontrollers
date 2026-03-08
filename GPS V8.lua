@@ -11,17 +11,17 @@ local function getHighlightColor(isSelected)
 		return UiR,UiG,UiB
 	end
 end
-function rotatePoint(x,y,angle)
+local function rotatePoint(x,y,angle)
 	return x*math.cos(angle)-y*math.sin(angle),x*math.sin(angle)+y*math.cos(angle)
 end
-function drawTrianglePointer(x,y,heading)
+local function drawTrianglePointer(x,y,heading)
 	local angle=math.rad(heading)
 	local tipX,tipY=rotatePoint(0,-5,angle)
 	local bottomLeftX,bottomLeftY=rotatePoint(-3,3,angle)
 	local bottomRightX,bottomRightY=rotatePoint(3,3,angle)
 	screen.drawTriangleF(x+tipX,y+tipY,x+bottomLeftX,y+bottomLeftY,x+bottomRightX,y+bottomRightY)
 end
-function drawCompassOverlay(compassDegrees,shadingOffset,enabled)
+local function drawCompassOverlay(compassDegrees,shadingOffset,enabled)
 	if enabled then
 		if compassDegrees>340 or compassDegrees<20 then
 			screen.drawText(w/2-2+shadingOffset,2,"N")
