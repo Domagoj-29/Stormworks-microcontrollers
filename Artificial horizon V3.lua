@@ -15,7 +15,7 @@ local function drawHorizon(roll,pitch,centerX,centerY,w,h)
 	local rollSin=math.sin(roll)
 	local rollCos=math.cos(roll)
 	local monitorDiagonal=math.sqrt(w^2+h^2)
-	local inverseTangentFOV=h/math.tan(0.5)
+	local inverseTangentFOV=h/math.tan(0.725)
 	local maxDrawnPitchAngle=math.atan(monitorDiagonal/inverseTangentFOV)
 
 	-- Pitch lines
