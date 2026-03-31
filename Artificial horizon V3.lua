@@ -68,7 +68,7 @@ function onDraw()
 	if TiltUp<0 then
 		drawHorizon(Roll,-Pitch,w/2,h/2,w,h)
 	else
-		drawHorizon(Roll,-Pitch,w/2-1,h/2-1,w,h)
+		drawHorizon(Roll,-Pitch,w/2-1,h/2,w,h)
 	end
 
 	-- Center line with a V notch (fixed position)
