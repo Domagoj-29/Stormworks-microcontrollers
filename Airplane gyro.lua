@@ -180,7 +180,7 @@ function onTick()
 	-- Autopilot roll
 	local autopilotRoll=clamp(-tiltRight*2-switchHeadingError*0.5,-0.4,0.4)
 	-- Autopilot yaw
-	local autopilotYaw=headingError/(0.1*math.abs(headingError)+0.05)*lerp(1,0,math.abs(tiltRight)*4)
+	local autopilotYaw=clamp(headingError/(0.1*math.abs(headingError)+0.05)*lerp(1,0,math.abs(tiltRight)*4),-0.25,0.25)
 
 	-- Pitch control
 	local pitchPIDSetpoint=PitchTurnSpeed*pitchWS
