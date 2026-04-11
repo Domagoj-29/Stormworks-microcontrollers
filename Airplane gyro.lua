@@ -9,10 +9,14 @@
 -- onTick functions
 
 local function makeMatC(phi,theta,psi)
-	local mar={{math.cos(theta)*math.cos(psi), math.sin(phi)*math.sin(theta)*math.cos(psi)-math.cos(phi)*math.sin(psi),
-		math.cos(phi)*math.sin(theta)*math.cos(psi)+math.sin(phi)*math.sin(psi)},{math.cos(theta)*math.sin(psi),
-		math.sin(phi)*math.sin(theta)*math.sin(psi)+math.cos(phi)*math.cos(psi),math.cos(phi)*math.sin(theta)*math.sin(psi)-math.sin(phi)*math.cos(psi)},
-		{-math.sin(theta),math.sin(phi)*math.cos(theta),math.cos(phi)*math.cos(theta)}}
+	local cosPhi,sinPhi=math.cos(phi),math.sin(phi)
+	local cosTheta,sinTheta=math.cos(theta),math.sin(theta)
+	local cosPsi,sinPsi=math.cos(psi),math.sin(psi)
+
+	local mar={{cosTheta*cosPsi, sinPhi*sinTheta*cosPsi-cosPhi*sinPsi,
+		cosPhi*sinTheta*cosPsi+sinPhi*sinPsi},{cosTheta*sinPsi,
+		sinPhi*sinTheta*sinPsi+cosPhi*cosPsi,cosPhi*sinTheta*sinPsi-sinPhi*cosPsi},
+		{-sinTheta,sinPhi*cosTheta,cosPhi*cosTheta}}
 	return mar
 end
 local function rotate(mat,vec)
@@ -170,22 +174,22 @@ function onTick()
 	local autoControl=altHoldEnabled or autopilotEnabled
 	local deltaAltitude=altitudeDelta(altitude)
 	local headingError=((compass+math.atan(gpsX-waypointX,gpsY-waypointY)/(math.pi*2)+1)%1-0.5)
-	local switchHeadingError=(autopilotEnabled) and headingError or 0
+	local switchedHeadingError=(autopilotEnabled) and headingError or 0
 	-- Autopilot (altHold) pitch
 	local altHoldPIDSetpoint=(altHoldAltitude==0) and -pitchWS*0.3 or clamp(0.002*(altHoldAltitude-altitude),-0.3,0.3)
-	local altHoldPIDEnabled=thresholdGate(tiltRight,-0.1,0.1) and autoControl
+	local altHoldPIDEnabled=thresholdGate(tiltRight,-0.1,0.1) and altHoldEnabled
 	local stabilizedAltHoldPitch=altHoldPID(altHoldPIDSetpoint,deltaAltitude,0.3,0.001,0,altHoldPIDEnabled)
-	local tiltAdjustedPitch=math.abs(switchHeadingError)*0.6*lerp(0,1,math.abs(tiltRight)*4)
-	local autopilotPitch=clamp(-stabilizedAltHoldPitch-tiltAdjustedPitch,-PitchTurnSpeed,PitchTurnSpeed)
+	local tiltAdjustedPitch=math.abs(switchedHeadingError)*0.6*lerp(0,1,math.abs(tiltRight)*4)
+	local altHoldPitch=clamp(-stabilizedAltHoldPitch-tiltAdjustedPitch,-PitchTurnSpeed,PitchTurnSpeed)
 	-- Autopilot roll
-	local autopilotRoll=clamp(-tiltRight*2-switchHeadingError*0.5,-0.4,0.4)
+	local autopilotRoll=clamp(-tiltRight*2-switchedHeadingError*0.5,-0.4,0.4)
 	-- Autopilot yaw
 	local autopilotYaw=clamp(headingError/(0.1*math.abs(headingError)+0.05)*lerp(1,0,math.abs(tiltRight)*4),-0.25,0.25)
 
 	-- Pitch control
 	local pitchPIDSetpoint=PitchTurnSpeed*pitchWS
-	if autoControl then
-		pitchPIDSetpoint=autopilotPitch
+	if altHoldEnabled then
+		pitchPIDSetpoint=altHoldPitch
 	elseif stabEnabled then
 		pitchPIDSetpoint=stabilizerPitch
 	end
