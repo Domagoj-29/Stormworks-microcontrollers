@@ -107,12 +107,12 @@ local function patternMatch(x, y, table)
 	end
 	return false
 end
+local function clamp(value, min, max)
+	return math.max(min, math.min(value, max))
+end
 local function textWidth(chars)
 	local gapCharW, charW = 4, 3
 	return gapCharW * (chars - 1) + charW
-end
-local function clamp(value, min, max)
-	return math.max(min, math.min(value, max))
 end
 local function getCoordinates()
 	local charH = 5
