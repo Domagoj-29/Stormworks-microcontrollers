@@ -230,6 +230,7 @@ DefaultZoom = property.getNumber("Default zoom") -- Comes after the Zoom multipl
 local zoomTimeCounter, zoomCounter = createCounter(1), createCounter(DefaultZoom)
 local linePulse = createPulse()
 local lineSRLatch = createSRLatch()
+local clearSRLatch = createSRLatch()
 local leftRightCounter, upDownCounter = createCounter(0), createCounter(0)
 local storeX, storeY = createMemoryRegister(), createMemoryRegister()
 local changeModePulse = createPulse()
@@ -318,7 +319,7 @@ function onTick()
 		DrawLine = lineSRLatch(linePressedPulse, (not WaypointSet) or (DrawLine and linePressedPulse))
 
 		local clearPressed = isPressed and touchRectF(inputX, inputY, Coords.Clear.X - 1, Coords.Clear.Y - 1, Coords.Clear.Width + 2, Coords.Clear.Height + 2)
-		ClearAll=clearPressed and WaypointMode == "Multiple" and WaypointSet
+		ClearAll=clearSRLatch(clearPressed and WaypointMode == "Multiple" and WaypointSet, not isPressed)
 		-- Waypoint removal
 		if ClearAll then
 			clearWaypointTable(WaypointTable, waypointX, waypointY)
