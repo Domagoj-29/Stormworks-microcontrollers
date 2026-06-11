@@ -272,7 +272,6 @@ function onTick()
 	local isPressed = input.getBool(1)	  -- This does NOT need old screen mode checking
 
 	cx, cy = w / 2, h / 2
-
 	Coords = getCoordinates() -- Coords stores static coordinates, scrolling is added in onDraw()
 
 	-- Waypoint table insertion
@@ -349,7 +348,7 @@ function onTick()
 		PointerX, PointerY = map.mapToScreen(StoredX, StoredY, Zoom, w, h, GPSX, GPSY)
 	elseif ScreenMode == "Data" then
 		local changeWaypointMode = isPressed and touchRectF(inputX, inputY, Coords.ChangeWaypointMode.X - 1, Coords.ChangeWaypointMode.Y - 1,
-            Coords.ChangeWaypointMode.Width + 2, Coords.ChangeWaypointMode.Height + 2)
+			Coords.ChangeWaypointMode.Width + 2, Coords.ChangeWaypointMode.Height + 2)
 		local changeWaypointModePulse = changeModePulse(changeWaypointMode)
 		if changeWaypointModePulse and WaypointMode == "Single" then
 			WaypointMode = "Multiple"
