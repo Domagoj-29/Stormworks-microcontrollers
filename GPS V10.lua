@@ -277,6 +277,7 @@ function onTick()
 
 	-- Waypoint table insertion
 	WaypointSet = not (WaypointTable[1].X == 0 and WaypointTable[1].Y == 0)
+	KeypadSet = not (waypointX == 0 and waypointY == 0)
 	if WaypointMode == "Single" then
 		WaypointTable[1].X = waypointX
 		WaypointTable[1].Y = waypointY
@@ -284,7 +285,7 @@ function onTick()
 		if not WaypointSet then
 			WaypointTable[1].X = waypointX
 			WaypointTable[1].Y = waypointY
-		elseif #WaypointTable < 8 then
+		elseif #WaypointTable < 8 and KeypadSet then
 			table.insert(WaypointTable, { X = waypointX, Y = waypointY })
 		end
 	end
@@ -431,7 +432,7 @@ function onDraw()
 				setHighlightColor(LinePressed, i)
 				drawText(Coords.Line.X + i, Coords.Line.Y, "L")
 				if WaypointMode == "Multiple" then
-					setHighlightColor(ClearAll, i)
+					setHighlightColor(ClearAll and KeypadSet, i)
 					drawText(Coords.Clear.X + i, Coords.Clear.Y, "C")
 				end
 			end
