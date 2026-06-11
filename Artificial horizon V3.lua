@@ -62,7 +62,7 @@ function onDraw()
 	local h=screen.getHeight()
 
 	-- Sky
-	screen.setColor(15,15,15)
+	screen.setColor(20,20,20)
 	screen.drawRectF(0,0,w,h)
 
 	if TiltUp<0 then
