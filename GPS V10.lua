@@ -323,6 +323,12 @@ function onTick()
 		-- Waypoint removal
 		if ClearAll then
 			clearWaypointTable(WaypointTable, waypointX, waypointY)
+		elseif Distance <= WaypointClearingRange then
+			table.remove(WaypointTable, 1)
+			if #WaypointTable == 0 then
+				WaypointTable[1].X = waypointX
+				WaypointTable[1].Y = waypointY
+			end
 		end
 
 		local anyMovement = (upPressed or downPressed or leftPressed or rightPressed)
