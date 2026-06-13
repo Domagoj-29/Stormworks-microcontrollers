@@ -323,7 +323,7 @@ function onTick()
 		-- Waypoint removal
 		if ClearAll then
 			clearWaypointTable(WaypointTable, waypointX, waypointY)
-		elseif Distance <= WaypointClearingRange then
+		elseif Distance * 1000 <= WaypointClearingRange then
 			table.remove(WaypointTable, 1)
 			if #WaypointTable == 0 then
 				table.insert(WaypointTable,{X = waypointX, Y = waypointY})
