@@ -326,8 +326,7 @@ function onTick()
 		elseif Distance <= WaypointClearingRange then
 			table.remove(WaypointTable, 1)
 			if #WaypointTable == 0 then
-				WaypointTable[1].X = waypointX
-				WaypointTable[1].Y = waypointY
+				table.insert(WaypointTable,{X = waypointX, Y = waypointY})
 			end
 		end
 
