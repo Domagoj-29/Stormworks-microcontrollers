@@ -12,6 +12,7 @@ local function propertyToColors(propertyName) -- Colors are stored as "255,255,2
 	end
 	return tempTable
 end
+-- Every character is stored as 4 hexadecimal numbers, with each bit representing one pixel (3x5 = 15, the last bit is ignored)
 FontString = property.getText("Font 1/3") .. property.getText("Font 2/3") .. property.getText("Font 3/3")
 CharacterTable = {}
 for hexValue in FontString:gmatch("....") do
@@ -22,7 +23,7 @@ local function drawText(x, y, text, size, isUpsideDown, width, horizontalAlign)
 	text = (isUpsideDown) and text:reverse() or text
 	text = text:upper()
 	local length = text:len()
-	if horizontalAlign == 0 then
+	if horizontalAlign == 0 then -- drawTextBox style alignment
 		x = (x + width / 2) - (length * 4 * size / 2)
 	elseif horizontalAlign == 1 then
 		x = (x + width) - (length * 4 * size) + 1
@@ -32,7 +33,7 @@ local function drawText(x, y, text, size, isUpsideDown, width, horizontalAlign)
 		if key >= 92 then	  -- For ASCIIs after the lowercase letters
 			key = key - 26
 		end
-		local charValue = CharacterTable[key] or 65534
+		local charValue = CharacterTable[key] or 65534 -- Default value draws a filled rectangle
 		for i = 14, 0, -1 do
 			local pixelX, pixelY = i % 3 * size, i // 3 * size
 			if (charValue & 2 ^ (15 - i)) ~= 0 then
@@ -155,11 +156,10 @@ local function createSRLatch()
 		return output
 	end
 end
+EstimateLimit = 359940 -- 99h 59m
 local function waypointDistance(gpsX, gpsY, waypointX, waypointY, speed)
-	local differenceX = waypointX - gpsX
-	local differenceY = waypointY - gpsY
-	local distance = clamp(math.sqrt(differenceX * differenceX + differenceY * differenceY) / 1000, 0, 256)
-	local estimate = clamp((distance / (speed * 3.6)) * 3600, 0, 359999)
+	local distance = clamp(math.sqrt((waypointX - gpsX) ^ 2 + (waypointY - gpsY) ^ 2) / 1000, 0, 256)
+	local estimate = clamp((distance / (speed * 3.6)) * 3600, 0, EstimateLimit)
 	return distance, estimate
 end
 local function touchRectF(inputX, inputY, x, y, rectW, rectH)
@@ -195,14 +195,11 @@ local function createCounter(startValue)
 	end
 end
 local function createPulse()
-	local k = 0
+	local oldVariable = false
 	return function(variable)
-		if not variable then
-			k = 0
-		else
-			k = k + 1
-		end
-		return k == 1
+		local risingEdge = not oldVariable and variable
+		oldVariable = variable
+		return risingEdge
 	end
 end
 local function clearWaypointTable(waypointTable, defaultX, defaultY)
@@ -242,6 +239,7 @@ Coords = {}
 WaypointTable = { { X = 0 , Y = 0} }
 DrawLine = false
 MapMovement = "GPS" -- GPS/Touchscreen
+MapLimit = 128000
 
 PointerTypes = { [1] = "Square", [2] = "Triangle" }
 PointerType = PointerTypes[property.getNumber("Pointer type")]
@@ -294,7 +292,10 @@ function onTick()
 		CompassDegrees = (CompassDegrees + 180) % 360
 	end
 
-	Distance, Estimate = (WaypointSet) and waypointDistance(GPSX, GPSY, WaypointTable[1].X, WaypointTable[1].Y, Speed) or 0, 0
+	Distance, Estimate = 0, 0
+	if WaypointSet then
+		Distance, Estimate = waypointDistance(GPSX, GPSY, WaypointTable[1].X, WaypointTable[1].Y, Speed)
+	end
 
 	local upPressed = isPressed and touchRectF(inputX, inputY, Coords.Up.X - 1, Coords.Up.Y - 1, Coords.Up.Width + 2, Coords.Up.Height + 2)
 	local downPressed = isPressed and touchRectF(inputX, inputY, Coords.Down.X - 1, Coords.Down.Y - 1, Coords.Down.Width + 2, Coords.Down.Height + 2)
@@ -344,9 +345,9 @@ function onTick()
 		local movementMultiplierX = math.abs(distanceToCenterX) * Zoom * PropertyMultiplierX
 		local movementMultiplierY = math.abs(distanceToCenterY) * Zoom * PropertyMultiplierY
 		local movementX = leftRightCounter(leftPressed and noButtonPressed, rightPressed and noButtonPressed,
-			0.5 * movementMultiplierX, -128000 - GPSX, 128000 - GPSX, ResetMovement)
+			0.5 * movementMultiplierX, -MapLimit - GPSX, MapLimit - GPSX, ResetMovement)
 		local movementY = upDownCounter(downPressed and noButtonPressed, upPressed and noButtonPressed,
-			0.5 * movementMultiplierY, -128000 - GPSY, 128000 - GPSY, ResetMovement)
+			0.5 * movementMultiplierY, -MapLimit - GPSY, MapLimit - GPSY, ResetMovement)
 
 		StoredX = storeX(GPSX, MapMovement == "GPS", ResetMovement, GPSX) + movementX
 		StoredY = storeY(GPSY, MapMovement == "GPS", ResetMovement, GPSY) + movementY
@@ -456,10 +457,10 @@ function onDraw()
 			screen.drawCircle((cx - 5) + round((11 - degreeDigits * 4) / 2) + (degreeDigits * 4 + 1) + i, Coords.Heading.Y + ScrollY, 1)
 			if WaypointSet then
 				drawText(Coords.DistanceEstimate.X + i, Coords.DistanceEstimate.Y + ScrollY,
-					string.format("%." .. 4 - string.len(math.floor(Distance)) .. "f", Distance) .. "km", 1, false, Coords.DistanceEstimate.Width, 0)
-				if Speed > SpeedThreshold and hours > 0 then
+					string.format("%." .. 3 - string.len(math.floor(Distance)) .. "f", Distance) .. " km", 1, false, Coords.DistanceEstimate.Width, 0)
+				if Speed >= SpeedThreshold and hours > 0 then
 					drawText(Coords.TimeEstimate.X + i, Coords.TimeEstimate.Y + ScrollY, string.format("%dh %.0fm", hours, minutes), 1, false, Coords.TimeEstimate.Width, 0)
-				elseif Speed > SpeedThreshold and round(minutes)>0 then
+				elseif Speed >= SpeedThreshold and round(minutes)>0 then
 					drawText(Coords.TimeEstimate.X + i, Coords.TimeEstimate.Y + ScrollY, string.format("%.0fm", minutes), 1, false, Coords.TimeEstimate.Width, 0)
 				end
 			end
