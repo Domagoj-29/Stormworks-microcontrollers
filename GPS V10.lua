@@ -415,14 +415,14 @@ function onDraw()
 			setArrayColor(PointerRGB, i)
 			if PointerType == "Triangle" then
 				drawTrianglePointer(PointerX + i, PointerY, CompassDegrees)
-			elseif PointerType == "Square" then
+			elseif PointerType == "Square" and i == 0 then
 				if MapMovement == "GPS" then
 					screen.drawRectF(cx - 1 + i, cy - 1, 2, 2)
 				else
 					screen.drawRectF(PointerX + i, PointerY, 2, 2)
 				end
 			end
-			if MapMovement == "Touchscreen" and ReferencePointer then
+			if MapMovement == "Touchscreen" and ReferencePointer and i == 0 then
 				screen.drawRectF(cx - 1 + i, cy - 1, 2, 2)
 			end
 			setArrayColor(UIRGB, i)
