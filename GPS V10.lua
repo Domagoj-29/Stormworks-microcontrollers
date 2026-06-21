@@ -411,17 +411,19 @@ function onDraw()
 			end
 		end
 		screen.setColor(PointerRGB[1], PointerRGB[2], PointerRGB[3])
+		if MapMovement == "Touchscreen" and ReferencePointer then
+			screen.drawRectF(w / 2 - 1, h / 2 - 1, 2, 2)
+		end
 		if PointerType == "Triangle" then
 			drawTrianglePointer(PointerX, PointerY, CompassDegrees)
+			screen.setColor(0, 0, 0)
+			drawTrianglePointer(PointerX + 1, PointerY, CompassDegrees)
 		elseif PointerType == "Square" then
 			if MapMovement == "GPS" then
 				screen.drawRectF(cx - 1, cy - 1, 2, 2)
 			else
 				screen.drawRectF(PointerX, PointerY, 2, 2)
 			end
-		end
-		if MapMovement == "Touchscreen" and ReferencePointer then
-			screen.drawRectF(w / 2 - 1, h / 2 - 1, 2, 2)
 		end
 
 		for i = 1, 0, -1 do
