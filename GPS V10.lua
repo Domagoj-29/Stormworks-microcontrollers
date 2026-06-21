@@ -77,6 +77,13 @@ local function drawPlus(x, y)
 	screen.drawRectF(x, y + 2, 5, 1)
 	screen.drawRectF(x + 2, y, 1, 5)
 end
+local function setPointerColor(i)
+	if i == 1 then
+		screen.setColor(0, 0, 0)
+	elseif i == 0 then
+		screen.setColor(PointerRGB[1], PointerRGB[2], PointerRGB[3])
+	end
+end
 local function setUIColor(i)
 	if i == 1 then
 		screen.setColor(0, 0, 0)
@@ -410,23 +417,21 @@ function onDraw()
 				screen.drawRectF(screenWaypointTable[i].X, screenWaypointTable[i].Y, 2, 2)
 			end
 		end
-		screen.setColor(PointerRGB[1], PointerRGB[2], PointerRGB[3])
-		if MapMovement == "Touchscreen" and ReferencePointer then
-			screen.drawRectF(w / 2 - 1, h / 2 - 1, 2, 2)
-		end
-		if PointerType == "Triangle" then
-			drawTrianglePointer(PointerX, PointerY, CompassDegrees)
-			screen.setColor(0, 0, 0)
-			drawTrianglePointer(PointerX + 1, PointerY, CompassDegrees)
-		elseif PointerType == "Square" then
-			if MapMovement == "GPS" then
-				screen.drawRectF(cx - 1, cy - 1, 2, 2)
-			else
-				screen.drawRectF(PointerX, PointerY, 2, 2)
-			end
-		end
 
 		for i = 1, 0, -1 do
+			setPointerColor(i)
+			if PointerType == "Triangle" then
+				drawTrianglePointer(PointerX + i, PointerY, CompassDegrees)
+			elseif PointerType == "Square" then
+				if MapMovement == "GPS" then
+					screen.drawRectF(cx - 1 + i, cy - 1, 2, 2)
+				else
+					screen.drawRectF(PointerX + i, PointerY, 2, 2)
+				end
+			end
+			if MapMovement == "Touchscreen" and ReferencePointer then
+				screen.drawRectF(cx - 1 + i, cy - 1, 2, 2)
+			end
 			setUIColor(i)
 			drawCompassOverlay(CompassDegrees, i, IsOverlayEnabled)
 			setHighlightColor(ZoomDecrease, i)
