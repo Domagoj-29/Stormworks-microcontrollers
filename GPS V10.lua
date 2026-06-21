@@ -77,18 +77,11 @@ local function drawPlus(x, y)
 	screen.drawRectF(x, y + 2, 5, 1)
 	screen.drawRectF(x + 2, y, 1, 5)
 end
-local function setPointerColor(i)
+local function setArrayColor(array, i)
 	if i == 1 then
 		screen.setColor(0, 0, 0)
 	elseif i == 0 then
-		screen.setColor(PointerRGB[1], PointerRGB[2], PointerRGB[3])
-	end
-end
-local function setUIColor(i)
-	if i == 1 then
-		screen.setColor(0, 0, 0)
-	elseif i == 0 then
-		screen.setColor(UIRGB[1], UIRGB[2], UIRGB[3])
+		screen.setColor(array[1], array[2], array[3])
 	end
 end
 local function setHighlightColor(isHighlighted, i)
@@ -419,7 +412,7 @@ function onDraw()
 		end
 
 		for i = 1, 0, -1 do
-			setPointerColor(i)
+			setArrayColor(PointerRGB, i)
 			if PointerType == "Triangle" then
 				drawTrianglePointer(PointerX + i, PointerY, CompassDegrees)
 			elseif PointerType == "Square" then
@@ -432,7 +425,7 @@ function onDraw()
 			if MapMovement == "Touchscreen" and ReferencePointer then
 				screen.drawRectF(cx - 1 + i, cy - 1, 2, 2)
 			end
-			setUIColor(i)
+			setArrayColor(UIRGB, i)
 			drawCompassOverlay(CompassDegrees, i, IsOverlayEnabled)
 			setHighlightColor(ZoomDecrease, i)
 			drawMinus(Coords.Minus.X + i, Coords.Minus.Y)
@@ -457,7 +450,7 @@ function onDraw()
 		local degreeDigits = string.len(string.format("%.0f", CompassDegrees))
 
 		for i = 1, 0, -1 do
-			setUIColor(i)
+			setArrayColor(UIRGB, i)
 			drawText(Coords.Xcoordinate.X + i, Coords.Xcoordinate.Y + ScrollY, string.format("%.0f", GPSX), 1, false, Coords.Xcoordinate.Width, 0)
 			drawText(Coords.Ycoordinate.X + i, Coords.Ycoordinate.Y + ScrollY, string.format("%.0f", GPSY), 1, false, Coords.Ycoordinate.Width, 0)
 			drawText(Coords.Heading.X + i, Coords.Heading.Y + ScrollY, string.format("%.0f", CompassDegrees), 1, false, Coords.Heading.Width, 0)
@@ -481,7 +474,7 @@ function onDraw()
 		end
 
 		for i = 1, 0, -1 do
-			setUIColor(i)
+			setArrayColor(UIRGB, i)
 			drawText(Coords.ChangeWaypointMode.X + i, Coords.ChangeWaypointMode.Y, WaypointMode:sub(1,1))
 		end
 		-- Background details
