@@ -163,8 +163,8 @@ function getCoordinates()
 	verticalGap = clamp((h / 32 - 1), 0, 2) * 2
 	return
 	{
-		Up = { X = 0, Y = 0, Width = w, Height = cy - 1 },
-		Down = { X = 0, Y = cy + 2, Width = w, Height = cy - 2 },
+		Up = { X = 0, Y = 0, Width = w, Height = cy - 2 },
+		Down = { X = 0, Y = cy + 1, Width = w, Height = cy - 1 },
 		Left = { X = 0, Y = 0, Width = cx - 1, Height = h },
 		Right = { X = cx + 2, Y = 0, Width = cx - 2, Height = h },
 
@@ -489,16 +489,18 @@ function onDraw()
 			setArrayColor(PointerRGB, i)
 			if PointerType == "T" then
 				drawTrianglePointer(PointerX + i, PointerY, CompassDegrees)
-			elseif PointerType == "S" and i == 0 then
+			elseif PointerType == "S" then -- Square and reference pointers intentionally don't have shading
 				if MapMovement == "G" then
-					screen.drawRectF(cx - 1 + i, cy - 1, 2, 2)
+					screen.drawRectF(cx - 1, cy - 1, 2, 2)
 				else
-					screen.drawRectF(PointerX + i, PointerY, 2, 2)
+					screen.drawRectF(PointerX, PointerY, 2, 2)
 				end
 			end
-			if MapMovement == "T" and ReferencePointer and i == 0 then
-				screen.drawRectF(cx - 1 + i, cy - 1, 2, 2)
+			if MapMovement == "T" and ReferencePointer then
+				screen.drawRectF(cx - 1, cy - 1, 2, 2)
 			end
+		end
+		for i = 1, 0, -1 do
 			setArrayColor(UIRGB, i)
 			drawCompassOverlay(CompassDegrees, i, IsOverlayEnabled)
 			setHighlightColor(ZoomDecrease, i)
