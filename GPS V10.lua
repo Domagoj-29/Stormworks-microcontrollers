@@ -422,11 +422,11 @@ function onDraw()
 					screen.drawRectF(PointerX, PointerY, 2, 2)
 				end
 			end
-		end
-		for i = 1, 0, -1 do
 			if MapMovement == "Touchscreen" and ReferencePointer then
 				screen.drawRectF(cx - 1, cy - 1, 2, 2)
 			end
+		end
+		for i = 1, 0, -1 do
 			setArrayColor(UIRGB, i)
 			drawCompassOverlay(CompassDegrees, i, IsOverlayEnabled)
 			setHighlightColor(ZoomDecrease, i)
