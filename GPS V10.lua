@@ -124,8 +124,8 @@ local function getCoordinates()
 	{
 		Up = { X = 0, Y = 0, Width = w, Height = cy - 2 },
 		Down = { X = 0, Y = cy + 1, Width = w, Height = cy - 1 },
-		Left = { X = 0, Y = 0, Width = cx - 1, Height = h },
-		Right = { X = cx + 2, Y = 0, Width = cx - 2, Height = h },
+		Left = { X = 0, Y = 0, Width = cx - 2, Height = h },
+		Right = { X = cx + 1, Y = 0, Width = cx - 1, Height = h },
 
 		Compass = { X = cx - 4, Y = 2, Width = textWidth(2), Height = charH }, -- Now a textBox, compass2 is no longer necessary
 		Minus = { X = w - 5, Y = symbolY, Width = 4, Height = charH },
