@@ -12,15 +12,8 @@ local function propertyToColors(propertyName) -- Colors are stored as "255,255,2
 	end
 	return tempTable
 end
-local function setUIColor(i)
-	if i == 1 then
-		screen.setColor(0, 0, 0)
-	elseif i == 0 then
-		screen.setColor(UIRGB[1], UIRGB[2], UIRGB[3])
-	end
-end
-local function setHighlightColor(isHighlighted, i)
-	i = i or 0
+local function setColor(i, isHighlighted)
+	isHighlighted = isHighlighted or false
 	if isHighlighted and i == 0 then
 		screen.setColor(255, 127, 0)
 	elseif i == 0 then
@@ -378,7 +371,7 @@ function onTick()
 		local scanPressed = isPressed and touchRectF(inputX, inputY, Coords.Scan.X, Coords.Scan.Y, Coords.Scan.Width, Coords.Scan.Height)
 		local scanPulse = pulseScan(scanPressed)
 		local signalFound = SignalStrength > 0
-		ScanSR = scanSRLatch(scanPulse and not ScanSR, (scanPulse and ScanSR) or signalFound)
+		ScanSR = scanSRLatch(scanPulse and not ScanSR, (scanPulse and ScanSR) or signalFound or FrequencySet == 10 ^ MaxFreqDigits - 1)
 		local scanSRPulse = pulseScanSR(ScanSR)
 		if scanSRPulse then
 			StartFrequency = FrequencySet
@@ -445,26 +438,26 @@ function onDraw()
 
 	if ScreenMode == "Menu" then
 		for i = 1, 0, -1 do
-			setUIColor(i)
+			setColor(i)
 			drawText(Coords.Frequency.X + i, Coords.Frequency.Y, "FRQ")
 			drawText(Coords.Data.X + i, Coords.Data.Y, "DATA")
 			drawText(Coords.Version.X + i, Coords.Version.Y, "V5")
-			setHighlightColor(PressedPTT or ExternalPTT, i)
+			setColor(i, PressedPTT or ExternalPTT)
 			drawText(Coords.PTT.X + i, Coords.PTT.Y, "PTT")
-			setHighlightColor(MuteToggle, i)
+			setColor(i, MuteToggle)
 			drawText(Coords.Mute.X + i, Coords.Mute.Y, "MUTE")
 		end
 	elseif ScreenMode == "Frequency" then
 		for i = 1, 0, -1 do
 			for j = 1, MaxFreqDigits do
-				setUIColor(i)
+				setColor(i)
 				drawText(Coords.FrequencyValue.X + i, Coords.FrequencyValue.Y, string.format("%0" .. MaxFreqDigits .. "d", FrequencySet), 1, false, textWidth(7), 0)
-				setHighlightColor(ScanSR, i)
+				setColor(i, ScanSR)
 				drawText(Coords.Scan.X + i, Coords.Scan.Y, "SCAN")
 				local k = j - 1
-				setHighlightColor(FreqCounter[j].Increment and not ScanSR, i)
+				setColor(i, FreqCounter[j].Increment and not ScanSR)
 				drawFrequencyArrow(Coords.ArrowUp.X + i - k * 4 - OffsetX, Coords.ArrowUp.Y, false)
-				setHighlightColor(FreqCounter[j].Decrement and not ScanSR, i)
+				setColor(i, FreqCounter[j].Decrement and not ScanSR)
 				drawFrequencyArrow(Coords.ArrowDown.X + i - k * 4 - OffsetX, Coords.ArrowDown.Y, true)
 			end
 		end
@@ -472,7 +465,7 @@ function onDraw()
 		for i = 1, 0, -1 do
 			for j = 1, 32 do
 				local k = j - 1
-				setUIColor(i)
+				setColor(i)
 				drawText(Coords.Channel.X + i, Coords.Channel.Y + (k * (charH + textGap)) - NumberDataScrollY, tostring(j) .. ":")
 				drawText(Coords.Channel.X + i, Coords.Channel.Y + (k * (charH + textGap)) - NumberDataScrollY, dynamicRounding(DataChannel[j].Number), 1, false, w - 3, 1)
 			end
@@ -480,14 +473,14 @@ function onDraw()
 		screen.setColor(20, 20, 20)
 		drawInvisibleRectangles()
 		for i = 1, 0, -1 do
-			setUIColor(i)
+			setColor(i)
 			drawText(Coords.ChangeData.X + i, Coords.ChangeData.Y, "NUM")
 		end
 	elseif ScreenMode == "LogicData" then
 		for i = 1, 0, -1 do
 			for j = 1, 32 do
 				local k = j - 1
-				setUIColor(i)
+				setColor(i)
 				drawText(Coords.Channel.X + i, Coords.Channel.Y + (k * (charH + textGap)) - LogicDataScrollY, tostring(j) .. ":")
 				drawText(Coords.Channel.X + i, Coords.Channel.Y + (k * (charH + textGap)) - LogicDataScrollY, boolToString(DataChannel[j].Logic), 1, false, w - 3, 1)
 			end
@@ -495,19 +488,19 @@ function onDraw()
 		screen.setColor(20, 20, 20)
 		drawInvisibleRectangles()
 		for i = 1, 0, -1 do
-			setUIColor(i)
+			setColor(i)
 			drawText(Coords.ChangeData.X + i, Coords.ChangeData.Y, "LOG")
 		end
 	elseif ScreenMode == "VideoData" then
 		for i = 1, 0, -1 do
-			setUIColor(i)
+			setColor(i)
 			drawText(Coords.ChangeData.X + i, Coords.ChangeData.Y, "VID")
 		end
 	end
 
 	for i = 1, 0, -1 do
 		if ScreenMode ~= "Menu" then
-			setUIColor(i)
+			setColor(i)
 			drawReturnArrow(Coords.Return.X + i, Coords.Return.Y, Coords.Return.Width)
 		end
 	end
