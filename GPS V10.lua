@@ -240,6 +240,7 @@ WaypointTable = { { X = 0 , Y = 0} }
 DrawLine = false
 MapMovement = "GPS" -- GPS/Touchscreen
 MapLimit = 128000
+w, h = 0, 0
 
 PointerTypes = { [1] = "Square", [2] = "Triangle" }
 PointerType = PointerTypes[property.getNumber("Pointer type")]
@@ -264,9 +265,8 @@ function onTick()
 	directionalSpeed, Speed = input.getNumber(9), input.getNumber(13)
 	CompassDegrees = (-input.getNumber(17) * 360 + 360) % 360
 	-- Misc. composite inputs
-	w, h = input.getNumber(18), input.getNumber(19)
-	local inputX, inputY = input.getNumber(20), input.getNumber(21)
-	local waypointX, waypointY = input.getNumber(22), input.getNumber(23)
+	local inputX, inputY = input.getNumber(18), input.getNumber(19)
+	local waypointX, waypointY = input.getNumber(20), input.getNumber(21)
 	local isPressed = input.getBool(1)	  -- This does NOT need old screen mode checking
 
 	cx, cy = w / 2, h / 2
@@ -380,6 +380,8 @@ function onTick()
 end
 
 function onDraw()
+	w, h = screen.getWidth(), screen.getHeight()
+
 	if ScreenMode == "Map" then
 		screen.setMapColorOcean(0, 0, 0, 2)
 		screen.setMapColorShallows(0, 0, 0, 40)
