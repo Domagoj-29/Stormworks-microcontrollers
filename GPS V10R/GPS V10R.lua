@@ -277,21 +277,22 @@ DrawLine = false
 StoredX, StoredY = 0, 0
 MapMovement = "G" -- "G", GPS/"T", Touchscreen
 MapLimit = 128000
+w, h = 0, 0
 
 PointerTypes = { [1] = "S", [2] = "T" } -- Square/triangle
 PointerType = PointerTypes[property.getNumber("Ptr")]
-PropertyMultiplierX, PropertyMultiplierY = property.getNumber("X mp"), property.getNumber("Y mp")
-ZoomMultiplier = property.getNumber("Zm mp")
+PropertyMultiplierX, PropertyMultiplierY = property.getNumber("X"), property.getNumber("Y")
+ZoomMultiplier = property.getNumber("Zm")
 WaypointModes = { [1] = "S", [2] = "M" } -- Single/multiple
-WaypointMode = WaypointModes[property.getNumber("Df wp")]
+WaypointMode = WaypointModes[property.getNumber("Df WP")]
 WaypointClearingRange = property.getNumber("Clr")
 SpeedThreshold = property.getNumber("SpdThr")
 UIRGB, LineRGB, PointerRGB = {}, {}, {}
 UIRGB, LineRGB, PointerRGB = propertyToColors("UIC"), propertyToColors("LnC"), propertyToColors("PtrC")
 
-IsOverlayEnabled = property.getBool("ComOvrl")
-ReferencePointer = property.getBool("RefPtr") -- "Square pointer during map movement"
-InvertHeading = property.getBool("InvHdg")
+IsOverlayEnabled = property.getBool("Com") -- Compass overlay
+ReferencePointer = property.getBool("Ref") -- "Square pointer during map movement"
+InvertHeading = property.getBool("Inv")
 
 -- Reminder: drawText function name does not get minimized, needs manual minimization
 --[[ Size optimizations:
@@ -305,13 +306,12 @@ function onTick()
 	directionalSpeed, Speed = input.getNumber(9), input.getNumber(13)
 	CompassDegrees = (-input.getNumber(17) * 360 + 360) % 360
 	-- Misc. composite inputs
-	w, h = input.getNumber(18), input.getNumber(19)
-	inputX, inputY = input.getNumber(20), input.getNumber(21)
-	waypointX, waypointY = input.getNumber(22), input.getNumber(23)
+	inputX, inputY = input.getNumber(18), input.getNumber(19)
+	waypointX, waypointY = input.getNumber(20), input.getNumber(21)
 	-- Radar target data inputs
-	targetX, targetY = input.getNumber(24), input.getNumber(25)
-	targetHorizontalDistance, targetBearing = input.getNumber(26), input.getNumber(27)
-	targetWeight = input.getNumber(28)
+	targetX, targetY = input.getNumber(22), input.getNumber(23)
+	targetHorizontalDistance, targetBearing = input.getNumber(24), input.getNumber(25)
+	targetWeight = input.getNumber(26)
 	isPressed = input.getBool(1)	  -- This does NOT need old screen mode checking
 
 	cx, cy = w / 2, h / 2
@@ -450,6 +450,8 @@ function onTick()
 end
 
 function onDraw()
+	w, h = screen.getWidth(), screen.getHeight()
+
 	if ScreenMode == "M" then
 		screen.setMapColorOcean(0, 0, 0, 2)
 		screen.setMapColorShallows(0, 0, 0, 40)
