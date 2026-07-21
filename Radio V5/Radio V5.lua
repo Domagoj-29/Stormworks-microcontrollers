@@ -310,13 +310,13 @@ DataPressedCheck = false
 FreqCounter = {}
 FrequencySet = 0
 NumberDataScrollY, LogicDataScrollY = 0, 0
+w, h = 0, 0
 
 UIRGB = propertyToColors("UI color")
 
 SkipVideoData = property.getBool("Skip video data")
 
 function onTick()
-	w, h = input.getNumber(1), input.getNumber(2)
 	local inputX, inputY = input.getNumber(3), input.getNumber(4)
 	SignalStrength = input.getNumber(5)
 
@@ -428,6 +428,8 @@ function onTick()
 end
 
 function onDraw()
+	w, h = screen.getWidth(), screen.getHeight()
+
 	if ScreenMode~="VideoData" then
 		screen.setColor(20, 20, 20)
 		screen.drawClear()
