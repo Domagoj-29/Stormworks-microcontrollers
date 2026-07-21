@@ -142,6 +142,8 @@ local zoomingCapacitor = createCapacitor()
 DefaultZoom = property.getNumber("Default zoom") -- Comes after the Zoom multiplier and before Default waypoint mode
 local zoomTimeCounter, zoomCounter = createCounter(1), createCounter(DefaultZoom)
 
+w, h = 0, 0
+
 ZoomMultiplier = property.getNumber("Zoom multiplier")
 UIRGB = propertyToColors("UI color")
 
@@ -150,8 +152,7 @@ IsOverlayEnabled = property.getBool("Zoom level overlay")
 -- Reminder: property values might have different names in the V10R
 function onTick()
 	-- Misc. composite inputs
-	w, h = input.getNumber(18), input.getNumber(19)
-	local inputX, inputY = input.getNumber(20), input.getNumber(21)
+	local inputX, inputY = input.getNumber(18), input.getNumber(19)
 	local isPressed = input.getBool(1)
 
 	cx, cy = w / 2, h / 2
@@ -172,6 +173,8 @@ function onTick()
 end
 
 function onDraw()
+	w, h = screen.getWidth(), screen.getHeight()
+
 	if ScreenMode == "Map" and DrawZoomOverlay then
 		local zoomLength = string.len(math.floor(Zoom))
 		local decimalPlaces = (w == 32) and zoomLength or 3
