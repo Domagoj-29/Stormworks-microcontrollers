@@ -305,7 +305,7 @@ function onTick()
 	ScreenMode = (DataToggled) and "Data" or "Map"
 
 	if ScreenMode == "Map" then
-		ZoomDecrease = isPressed and touchRectF(inputX, inputY, Coords.Minus.X - 1, Coords.Minus.Y - 1, Coords.Minus.Width + 2, Coords.Minus.Height + 3)
+		ZoomDecrease = isPressed and touchRectF(inputX, inputY, Coords.Minus.X - 1, Coords.Minus.Y - 1, Coords.Minus.Width + 3, Coords.Minus.Height + 3)
 		ZoomIncrease = isPressed and touchRectF(inputX, inputY, Coords.Plus.X - 1, Coords.Plus.Y - 1, Coords.Plus.Width + 2, Coords.Plus.Height + 3)
 		local zooming = ZoomDecrease or ZoomIncrease
 		local zoomTimeMultiplier = zoomTimeCounter(false, zooming, 0.1, 1, 3, not zooming)
