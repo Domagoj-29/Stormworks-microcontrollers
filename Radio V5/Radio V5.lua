@@ -300,7 +300,8 @@ DataChannel = {}
 for i = 1, 32 do
 	DataChannel[i] = {Number = 0, Logic = false}
 end
-Coords = {}
+w, h, cx, cy, WidthScale, HeightScale = 0, 0, 0, 0, 0, 0
+Coords = getCoordinates() -- Coords stores static coordinates, scrolling is added in onDraw()
 LastDataMode = "NumberData"
 ScreenMode = "Menu" -- "Menu", "Frequency", "NumberData", "LogicData", "VideoData"
 ScanSR = false
@@ -310,7 +311,6 @@ DataPressedCheck = false
 FreqCounter = {}
 FrequencySet = 0
 NumberDataScrollY, LogicDataScrollY = 0, 0
-w, h = 0, 0
 
 UIRGB = propertyToColors("UI color")
 
@@ -330,10 +330,6 @@ function onTick()
 		DataChannel[j].Number = input.getNumber(i)
 		DataChannel[j].Logic = input.getBool(i)
 	end
-
-	cx, cy = w / 2, h / 2
-	WidthScale, HeightScale = w / 32 - 1, h / 32 - 1
-	Coords = getCoordinates() -- Coords stores static coordinates, scrolling is added in onDraw()
 
 	local returnButton = isPressed and touchRectF(inputX, inputY, Coords.Return.X - 1, Coords.Return.Y - 1, Coords.Return.Width + 2, Coords.Return.Height + 2 )
 	if ScreenMode ~= "Menu" and returnPulse(returnButton) then
@@ -428,7 +424,12 @@ function onTick()
 end
 
 function onDraw()
-	w, h = screen.getWidth(), screen.getHeight()
+	if w == 0 and h == 0 then
+		w, h = screen.getWidth(), screen.getHeight()
+		cx, cy = w / 2, h / 2
+		WidthScale, HeightScale = w / 32 - 1, h / 32 - 1
+		Coords = getCoordinates()
+	end
 
 	if ScreenMode~="VideoData" then
 		screen.setColor(20, 20, 20)
