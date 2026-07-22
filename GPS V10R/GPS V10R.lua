@@ -543,7 +543,7 @@ function onDraw()
 		end
 
 		-- Invisible rectangles for scrolling
-		if h == 32 then
+		if h < 33 then
 			screen.setColor(20, 20, 20)
 			screen.drawRectF(0, 0, w, 2)
 			screen.drawRectF(0, 23, w, 9)
