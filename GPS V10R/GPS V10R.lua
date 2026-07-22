@@ -18,15 +18,14 @@ CharacterTable = {}
 for hexValue in FontString:gmatch("....") do
 	table.insert(CharacterTable, tonumber(hexValue, 16))
 end
-function drawText(x, y, text, size, isUpsideDown, width, horizontalAlign)
-	size, isUpsideDown, width, horizontalAlign = size or 1, isUpsideDown or false, width or 0, horizontalAlign or -1
-	text = (isUpsideDown) and text:reverse() or text
+function drawText(x, y, text, width, horizontalAlign)
+	width, horizontalAlign = width or 0, horizontalAlign or -1
 	text = text:upper()
 	length = text:len()
 	if horizontalAlign == 0 then -- drawTextBox style alignment
-		x = (x + width / 2) - (length * 4 * size / 2)
+		x = (x + width / 2) - (length * 4 / 2)
 	elseif horizontalAlign == 1 then
-		x = (x + width) - (length * 4 * size) + 1
+		x = (x + width) - (length * 4) + 1
 	end
 	for char in text:gmatch(".") do
 		key = char:byte() - 31 -- Convert ASCII value into a key for the character table
@@ -35,16 +34,12 @@ function drawText(x, y, text, size, isUpsideDown, width, horizontalAlign)
 		end
 		charValue = CharacterTable[key] or 65534 -- Default value draws a filled rectangle
 		for i = 14, 0, -1 do
-			pixelX, pixelY = i % 3 * size, i // 3 * size
+			pixelX, pixelY = i % 3 * 1, i // 3
 			if (charValue & 2 ^ (15 - i)) ~= 0 then
-				if not isUpsideDown then
-					screen.drawRectF(x + pixelX, y + pixelY, size, size)
-				else
-					screen.drawRectF(x + (2 - pixelX), y + (4 - pixelY), size, size)
-				end
+				screen.drawRectF(x + pixelX, y + pixelY, 1, 1)
 			end
 		end
-		x = x + 4 * size
+		x = x + 4
 	end
 end
 function round(x)
@@ -52,7 +47,7 @@ function round(x)
 end
 function setTargetColor(i, mass, alpha)
 	roundedMass, MassTable = round(mass), {[25] = {255, 170, 0}, [500] = {0, 85, 255}, [2500] = {150, 0, 255}, [60500] = {255, 0, 0}} -- player/NPC, shark, whale and megalodon
-	if i == 1 then
+	if i > 0 then
 		screen.setColor(0, 0, 0)
 	else
 		color = MassTable[roundedMass] or {255, 0, 0}
@@ -74,8 +69,8 @@ function drawTarget(target)
 
 		setTargetColor(i, target.Mass, alpha)
 		if target.Toggle then
-			drawText(targetDataX - textSpace, screenY - offsetY1, string.format("%.1f", target.Distance), 1, false, 20, alignX)
-			drawText(targetDataX - textSpace, bearingY, string.format("%.0f", target.Bearing), 1, false, 20, alignX)
+			drawText(targetDataX - textSpace, screenY - offsetY1, string.format("%.1f", target.Distance), 20, alignX)
+			drawText(targetDataX - textSpace, bearingY, string.format("%.0f", target.Bearing), 20, alignX)
 			if alignX == -1 then
 				-- Degree symbol is manually drawn with squares, because drawCircle has some weird aliasing with the alpha channel.
 				screen.drawRectF(targetDataX, bearingY, 1, 1)
@@ -111,7 +106,7 @@ function drawCompassOverlay(compassDegrees, shadingOffset, enabled)
 	if enabled then
 		for i = 1, 9 do
 			if compassDegrees <= degreeArray[i] then
-				drawText(Coords.Compass.X + shadingOffset, Coords.Compass.Y, directionArray[i], 1, false, Coords.Compass.Width, 0)
+				drawText(Coords.Compass.X + shadingOffset, Coords.Compass.Y, directionArray[i], Coords.Compass.Width, 0)
 				break
 			end
 		end
@@ -125,25 +120,28 @@ function drawPlus(x, y)
 	screen.drawRectF(x + 2, y, 1, 5)
 end
 function setArrayColor(array, i)
-	if i == 1 then
+	if i > 0 then
 		screen.setColor(0, 0, 0)
-	elseif i == 0 then
+	elseif i < 1 then
 		screen.setColor(array[1], array[2], array[3])
 	end
 end
 function setHighlightColor(isHighlighted, i)
 	i = i or 0
-	if isHighlighted and i == 0 then
+	if isHighlighted and i < 1 then
 		screen.setColor(255, 127, 0)
-	elseif i == 0 then
+	elseif i < 1 then
 		screen.setColor(UIRGB[1], UIRGB[2], UIRGB[3])
-	elseif i == 1 then
+	elseif i > 0 then
 		screen.setColor(0, 0, 0)
 	end
 end
 
 -- onTick functions
 
+function isWaypointSet()
+	return WaypointTable[1].X ~= 0 or WaypointTable[1].Y ~= 0
+end
 function patternMatch(x, y, table)
 	for i = 1, #table do
 		if table[i].X == x and table[i].Y == y then
@@ -268,8 +266,8 @@ changeModePulse = createPulse()
 scrollSRLatch = createSRLatch()
 scrollCounter = createCounter(0)
 
-
-Coords = {}
+w, h, cx, cy = 0, 0, 0, 0
+Coords = getCoordinates() -- Coords stores static coordinates, scrolling is added in onDraw()
 OldTargetX = 0
 Target = {}
 WaypointTable = { { X = 0 , Y = 0} }
@@ -314,9 +312,6 @@ function onTick()
 	targetWeight = input.getNumber(26)
 	isPressed = input.getBool(1)	  -- This does NOT need old screen mode checking
 
-	cx, cy = w / 2, h / 2
-	Coords = getCoordinates() -- Coords stores static coordinates, scrolling is added in onDraw()
-
 	-- Radar target table insertion
 	if targetX ~= OldTargetX and targetX ~= 0 then
 		table.insert(Target, {X = targetX, Y = targetY, Distance = targetHorizontalDistance, Bearing = targetBearing, Mass = targetWeight,
@@ -332,13 +327,12 @@ function onTick()
 	end
 
 	-- Waypoint table insertion
-	WaypointSet = not (WaypointTable[1].X == 0 and WaypointTable[1].Y == 0)
-	KeypadSet = not (waypointX == 0 and waypointY == 0)
+	KeypadSet = waypointX ~= 0 or waypointY ~= 0
 	if WaypointMode == "S" then
 		WaypointTable[1].X = waypointX
 		WaypointTable[1].Y = waypointY
 	elseif not patternMatch(waypointX, waypointY, WaypointTable) and WaypointMode == "M" then
-		if not WaypointSet then
+		if not isWaypointSet() then
 			WaypointTable[1].X = waypointX
 			WaypointTable[1].Y = waypointY
 		elseif #WaypointTable < 8 and KeypadSet then
@@ -352,7 +346,7 @@ function onTick()
 	end
 
 	Distance, Estimate = 0, 0
-	if WaypointSet then
+	if isWaypointSet() then
 		Distance, Estimate = waypointDistance(GPSX, GPSY, WaypointTable[1].X, WaypointTable[1].Y, Speed)
 	end
 
@@ -361,38 +355,38 @@ function onTick()
 	leftPressed = touchRectF(isPressed, inputX, inputY, Coords.Left.X - 1, Coords.Left.Y - 1, Coords.Left.Width + 2, Coords.Left.Height + 2)
 	rightPressed = touchRectF(isPressed, inputX, inputY, Coords.Right.X - 1, Coords.Right.Y - 1, Coords.Right.Width + 2, Coords.Right.Height + 2)
 
-	dataPressed = touchRectF(isPressed, inputX, inputY, Coords.Data.X-1, Coords.Data.Y-1, Coords.Data.Width + 2, Coords.Data.Height + 2)
+	dataPressed = touchRectF(isPressed, inputX, inputY, Coords.Data.X-1, Coords.Data.Y-1, Coords.Data.Width + 2, Coords.Data.Height + 3)
 	DataToggled = dataButtonToToggle(dataPressed)
 	ScreenMode = (DataToggled) and "D" or "M" -- "Data" or "Map"
 
 	if ScreenMode == "M" then
-		ZoomDecrease = touchRectF(isPressed, inputX, inputY, Coords.Minus.X - 1, Coords.Minus.Y - 1, Coords.Minus.Width + 2, Coords.Minus.Height + 2)
-		ZoomIncrease = touchRectF(isPressed, inputX, inputY, Coords.Plus.X - 1, Coords.Plus.Y - 1, Coords.Plus.Width + 2, Coords.Plus.Height + 2)
+		ZoomDecrease = touchRectF(isPressed, inputX, inputY, Coords.Minus.X - 1, Coords.Minus.Y - 1, Coords.Minus.Width + 3, Coords.Minus.Height + 3)
+		ZoomIncrease = touchRectF(isPressed, inputX, inputY, Coords.Plus.X - 1, Coords.Plus.Y - 1, Coords.Plus.Width + 2, Coords.Plus.Height + 3)
 		zooming = ZoomDecrease or ZoomIncrease
 		zoomTimeMultiplier = zoomTimeCounter(false, zooming, 0.1, 1, 3, not zooming)
 		Zoom = zoomCounter(ZoomIncrease, ZoomDecrease, 0.03 * zoomTimeMultiplier * ZoomMultiplier, 0.1, 50, false)
 
-		ResetMovement = touchRectF(isPressed, inputX, inputY, Coords.Reset.X - 1, Coords.Reset.Y - 1, Coords.Reset.Width + 2, Coords.Reset.Height + 2)
+		ResetMovement = touchRectF(isPressed, inputX, inputY, Coords.Reset.X - 1, Coords.Reset.Y - 1, Coords.Reset.Width + 2, Coords.Reset.Height + 3)
 
-		LinePressed = touchRectF(isPressed, inputX, inputY, Coords.Line.X - 1, Coords.Line.Y - 1, Coords.Line.Width + 2, Coords.Line.Height + 2)
-		linePressedPulse = linePulse(LinePressed)
-		DrawLine = lineSRLatch(linePressedPulse, (not WaypointSet) or (DrawLine and linePressedPulse))
-
-		clearPressed = touchRectF(isPressed, inputX, inputY, Coords.Clear.X - 1, Coords.Clear.Y - 1, Coords.Clear.Width + 2, Coords.Clear.Height + 2)
-		ClearAll=clearSRLatch(clearPressed and WaypointMode == "M" and WaypointSet, not isPressed)
+		clearPressed = touchRectF(isPressed, inputX, inputY, Coords.Clear.X - 1, Coords.Clear.Y - 1, Coords.Clear.Width + 2, Coords.Clear.Height + 3)
+		ClearAll=clearSRLatch(clearPressed and WaypointMode == "M" and isWaypointSet(), not isPressed)
 		-- Waypoint removal
 		if ClearAll then
 			clearWaypointTable(WaypointTable, waypointX, waypointY)
 		elseif Distance * 1000 <= WaypointClearingRange then
 			table.remove(WaypointTable, 1)
-			if #WaypointTable == 0 then
+			if #WaypointTable < 1 then
 				table.insert(WaypointTable,{X = waypointX, Y = waypointY})
 			end
 		end
 
+		LinePressed = touchRectF(isPressed, inputX, inputY, Coords.Line.X - 1, Coords.Line.Y - 1, Coords.Line.Width + 2, Coords.Line.Height + 3)
+		linePressedPulse = linePulse(LinePressed)
+		DrawLine = lineSRLatch(linePressedPulse, (not isWaypointSet()) or (DrawLine and linePressedPulse))
+
 		anyMovement = (upPressed or downPressed or leftPressed or rightPressed)
 		noButtonPressed = not (dataPressed or ZoomDecrease or ZoomIncrease or ResetMovement or
-			(LinePressed and WaypointSet) or ClearAll)
+			(LinePressed and isWaypointSet()) or ClearAll)
 		-- Radar target buttons
 		anyTargetsPressed = false
 		for i = 1, #Target do
@@ -421,7 +415,6 @@ function onTick()
 
 		StoredX = storeX(GPSX, MapMovement == "G", ResetMovement, GPSX) + movementX
 		StoredY = storeY(GPSY, MapMovement == "G", ResetMovement, GPSY) + movementY
-		PointerX, PointerY = map.mapToScreen(StoredX, StoredY, Zoom, w, h, GPSX, GPSY)
 	elseif ScreenMode == "D" then
 		changeWaypointMode = touchRectF(isPressed, inputX, inputY, Coords.ChangeWaypointMode.X - 1, Coords.ChangeWaypointMode.Y - 1,
 			Coords.ChangeWaypointMode.Width + 2, Coords.ChangeWaypointMode.Height + 2)
@@ -436,8 +429,8 @@ function onTick()
 
 		noButtonsPressed = not (dataPressed or changeWaypointMode)
 		-- Custom scrolling for the 1x1 and 1x2 screens
-		if h == 32 then
-			scrollDown = scrollSRLatch(downPressed and noButtonsPressed, (upPressed and noButtonsPressed) or (not WaypointSet))
+		if h < 33 then
+			scrollDown = scrollSRLatch(downPressed and noButtonsPressed, (upPressed and noButtonsPressed) or (not isWaypointSet()))
 			scrollUp = not scrollDown
 			ScrollY = scrollCounter(scrollDown, scrollUp, 1, -21, 0, false)
 		else
@@ -450,7 +443,11 @@ function onTick()
 end
 
 function onDraw()
-	w, h = screen.getWidth(), screen.getHeight()
+	if w < 1  then
+		w, h = screen.getWidth(), screen.getHeight()
+		cx, cy = w / 2, h / 2
+		Coords = getCoordinates()
+	end
 
 	if ScreenMode == "M" then
 		screen.setMapColorOcean(0, 0, 0, 2)
@@ -473,6 +470,7 @@ function onDraw()
 			screenWaypointTable[i] = { X = screenX, Y = screenY }
 		end
 
+		PointerX, PointerY = map.mapToScreen(StoredX, StoredY, Zoom, w, h, GPSX, GPSY)
 		if DrawLine then
 			screen.setColor(LineRGB[1], LineRGB[2], LineRGB[3])
 			screen.drawLine(PointerX, PointerY, screenWaypointTable[1].X, screenWaypointTable[1].Y)
@@ -480,7 +478,7 @@ function onDraw()
 				screen.drawLine(screenWaypointTable[i - 1].X, screenWaypointTable[i - 1].Y, screenWaypointTable[i].X, screenWaypointTable[i].Y)
 			end
 		end
-		if WaypointSet then
+		if isWaypointSet() then
 			screen.setColor(255, 127, 0)
 			for i = 1, #screenWaypointTable do
 				screen.drawRectF(screenWaypointTable[i].X, screenWaypointTable[i].Y, 2, 2)
@@ -511,7 +509,7 @@ function onDraw()
 			drawPlus(Coords.Plus.X + i, Coords.Plus.Y)
 			setHighlightColor(ResetMovement, i)
 			drawText(Coords.Reset.X + i, Coords.Reset.Y, "R") -- Data button is at the end of onDraw()
-			if WaypointSet then
+			if isWaypointSet() then
 				setHighlightColor(LinePressed, i)
 				drawText(Coords.Line.X + i, Coords.Line.Y, "L")
 				if WaypointMode == "M" then
@@ -529,17 +527,17 @@ function onDraw()
 
 		for i = 1, 0, -1 do
 			setArrayColor(UIRGB, i)
-			drawText(Coords.Xcoordinate.X + i, Coords.Xcoordinate.Y + ScrollY, string.format("%.0f", GPSX), 1, false, Coords.Xcoordinate.Width, 0)
-			drawText(Coords.Ycoordinate.X + i, Coords.Ycoordinate.Y + ScrollY, string.format("%.0f", GPSY), 1, false, Coords.Ycoordinate.Width, 0)
-			drawText(Coords.Heading.X + i, Coords.Heading.Y + ScrollY, string.format("%.0f", CompassDegrees), 1, false, Coords.Heading.Width, 0)
+			drawText(Coords.Xcoordinate.X + i, Coords.Xcoordinate.Y + ScrollY, string.format("%.0f", GPSX), Coords.Xcoordinate.Width, 0)
+			drawText(Coords.Ycoordinate.X + i, Coords.Ycoordinate.Y + ScrollY, string.format("%.0f", GPSY), Coords.Ycoordinate.Width, 0)
+			drawText(Coords.Heading.X + i, Coords.Heading.Y + ScrollY, string.format("%.0f", CompassDegrees), Coords.Heading.Width, 0)
 			screen.drawCircle((cx - 5) + round((11 - degreeDigits * 4) / 2) + (degreeDigits * 4 + 1) + i, Coords.Heading.Y + ScrollY, 1)
-			if WaypointSet then
+			if isWaypointSet() then
 				drawText(Coords.DistanceEstimate.X + i, Coords.DistanceEstimate.Y + ScrollY,
-					string.format("%." .. 3 - string.len(math.floor(Distance)) .. "f", Distance) .. " km", 1, false, Coords.DistanceEstimate.Width, 0)
+					string.format("%." .. 3 - string.len(math.floor(Distance)) .. "f", Distance) .. " km", Coords.DistanceEstimate.Width, 0)
 				if Speed >= SpeedThreshold and hours > 0 then
-					drawText(Coords.TimeEstimate.X + i, Coords.TimeEstimate.Y + ScrollY, string.format("%dh %.0fm", hours, minutes), 1, false, Coords.TimeEstimate.Width, 0)
+					drawText(Coords.TimeEstimate.X + i, Coords.TimeEstimate.Y + ScrollY, string.format("%dh %.0fm", hours, minutes), Coords.TimeEstimate.Width, 0)
 				elseif Speed >= SpeedThreshold and round(minutes)>0 then
-					drawText(Coords.TimeEstimate.X + i, Coords.TimeEstimate.Y + ScrollY, string.format("%.0fm", minutes), 1, false, Coords.TimeEstimate.Width, 0)
+					drawText(Coords.TimeEstimate.X + i, Coords.TimeEstimate.Y + ScrollY, string.format("%.0fm", minutes), Coords.TimeEstimate.Width, 0)
 				end
 			end
 		end
