@@ -100,6 +100,9 @@ end
 
 -- onTick functions
 
+local function isWaypointSet()
+	return WaypointTable[1].X ~= 0 or WaypointTable[1].Y ~= 0
+end
 local function patternMatch(x, y, table)
 	for i = 1, #table do
 		if table[i].X == x and table[i].Y == y then
@@ -234,13 +237,12 @@ local changeModePulse = createPulse()
 local scrollSRLatch = createSRLatch()
 local scrollCounter = createCounter(0)
 
-
-Coords = {}
+w, h, cx, cy = 0, 0, 0, 0
+Coords = getCoordinates() -- Coords stores static coordinates, scrolling is added in onDraw()
 WaypointTable = { { X = 0 , Y = 0} }
 DrawLine = false
 MapMovement = "GPS" -- GPS/Touchscreen
 MapLimit = 128000
-w, h = 0, 0
 
 PointerTypes = { [1] = "Square", [2] = "Triangle" }
 PointerType = PointerTypes[property.getNumber("Pointer type")]
@@ -269,17 +271,13 @@ function onTick()
 	local waypointX, waypointY = input.getNumber(20), input.getNumber(21)
 	local isPressed = input.getBool(1)	  -- This does NOT need old screen mode checking
 
-	cx, cy = w / 2, h / 2
-	Coords = getCoordinates() -- Coords stores static coordinates, scrolling is added in onDraw()
-
 	-- Waypoint table insertion
-	WaypointSet = not (WaypointTable[1].X == 0 and WaypointTable[1].Y == 0)
-	KeypadSet = not (waypointX == 0 and waypointY == 0)
+	KeypadSet = waypointX ~= 0 or waypointY ~= 0
 	if WaypointMode == "Single" then
 		WaypointTable[1].X = waypointX
 		WaypointTable[1].Y = waypointY
 	elseif not patternMatch(waypointX, waypointY, WaypointTable) and WaypointMode == "Multiple" then
-		if not WaypointSet then
+		if not isWaypointSet() then
 			WaypointTable[1].X = waypointX
 			WaypointTable[1].Y = waypointY
 		elseif #WaypointTable < 8 and KeypadSet then
@@ -293,7 +291,7 @@ function onTick()
 	end
 
 	Distance, Estimate = 0, 0
-	if WaypointSet then
+	if isWaypointSet() then
 		Distance, Estimate = waypointDistance(GPSX, GPSY, WaypointTable[1].X, WaypointTable[1].Y, Speed)
 	end
 
@@ -302,25 +300,21 @@ function onTick()
 	local leftPressed = isPressed and touchRectF(inputX, inputY, Coords.Left.X - 1, Coords.Left.Y - 1, Coords.Left.Width + 2, Coords.Left.Height + 2)
 	local rightPressed = isPressed and touchRectF(inputX, inputY, Coords.Right.X - 1, Coords.Right.Y - 1, Coords.Right.Width + 2, Coords.Right.Height + 2)
 
-	local dataPressed = isPressed and touchRectF(inputX, inputY, Coords.Data.X-1, Coords.Data.Y-1, Coords.Data.Width + 2, Coords.Data.Height + 2)
+	local dataPressed = isPressed and touchRectF(inputX, inputY, Coords.Data.X-1, Coords.Data.Y-1, Coords.Data.Width + 2, Coords.Data.Height + 3)
 	DataToggled = dataButtonToToggle(dataPressed)
 	ScreenMode = (DataToggled) and "Data" or "Map"
 
 	if ScreenMode == "Map" then
-		ZoomDecrease = isPressed and touchRectF(inputX, inputY, Coords.Minus.X - 1, Coords.Minus.Y - 1, Coords.Minus.Width + 2, Coords.Minus.Height + 2)
-		ZoomIncrease = isPressed and touchRectF(inputX, inputY, Coords.Plus.X - 1, Coords.Plus.Y - 1, Coords.Plus.Width + 2, Coords.Plus.Height + 2)
+		ZoomDecrease = isPressed and touchRectF(inputX, inputY, Coords.Minus.X - 1, Coords.Minus.Y - 1, Coords.Minus.Width + 2, Coords.Minus.Height + 3)
+		ZoomIncrease = isPressed and touchRectF(inputX, inputY, Coords.Plus.X - 1, Coords.Plus.Y - 1, Coords.Plus.Width + 2, Coords.Plus.Height + 3)
 		local zooming = ZoomDecrease or ZoomIncrease
 		local zoomTimeMultiplier = zoomTimeCounter(false, zooming, 0.1, 1, 3, not zooming)
 		Zoom = zoomCounter(ZoomIncrease, ZoomDecrease, 0.03 * zoomTimeMultiplier * ZoomMultiplier, 0.1, 50, false)
 
-		ResetMovement = isPressed and touchRectF(inputX, inputY, Coords.Reset.X - 1, Coords.Reset.Y - 1, Coords.Reset.Width + 2, Coords.Reset.Height + 2)
+		ResetMovement = isPressed and touchRectF(inputX, inputY, Coords.Reset.X - 1, Coords.Reset.Y - 1, Coords.Reset.Width + 2, Coords.Reset.Height + 3)
 
-		LinePressed = isPressed and touchRectF(inputX, inputY, Coords.Line.X - 1, Coords.Line.Y - 1, Coords.Line.Width + 2, Coords.Line.Height + 2)
-		local linePressedPulse = linePulse(LinePressed)
-		DrawLine = lineSRLatch(linePressedPulse, (not WaypointSet) or (DrawLine and linePressedPulse))
-
-		local clearPressed = isPressed and touchRectF(inputX, inputY, Coords.Clear.X - 1, Coords.Clear.Y - 1, Coords.Clear.Width + 2, Coords.Clear.Height + 2)
-		ClearAll=clearSRLatch(clearPressed and WaypointMode == "Multiple" and WaypointSet, not isPressed)
+		local clearPressed = isPressed and touchRectF(inputX, inputY, Coords.Clear.X - 1, Coords.Clear.Y - 1, Coords.Clear.Width + 2, Coords.Clear.Height + 3)
+		ClearAll = clearSRLatch(clearPressed and WaypointMode == "Multiple" and isWaypointSet(), not isPressed)
 		-- Waypoint removal
 		if ClearAll then
 			clearWaypointTable(WaypointTable, waypointX, waypointY)
@@ -331,9 +325,13 @@ function onTick()
 			end
 		end
 
+		LinePressed = isPressed and touchRectF(inputX, inputY, Coords.Line.X - 1, Coords.Line.Y - 1, Coords.Line.Width + 2, Coords.Line.Height + 3)
+		local linePressedPulse = linePulse(LinePressed)
+		DrawLine = lineSRLatch(linePressedPulse, (not isWaypointSet()) or (DrawLine and linePressedPulse))
+
 		local anyMovement = (upPressed or downPressed or leftPressed or rightPressed)
 		local noButtonPressed = not (dataPressed or ZoomDecrease or ZoomIncrease or ResetMovement or
-			(LinePressed and WaypointSet) or ClearAll)
+			(LinePressed and isWaypointSet()) or ClearAll)
 
 		if MapMovement == "GPS" and anyMovement and noButtonPressed then
 			MapMovement = "Touchscreen"
@@ -351,7 +349,6 @@ function onTick()
 
 		StoredX = storeX(GPSX, MapMovement == "GPS", ResetMovement, GPSX) + movementX
 		StoredY = storeY(GPSY, MapMovement == "GPS", ResetMovement, GPSY) + movementY
-		PointerX, PointerY = map.mapToScreen(StoredX, StoredY, Zoom, w, h, GPSX, GPSY)
 	elseif ScreenMode == "Data" then
 		local changeWaypointMode = isPressed and touchRectF(inputX, inputY, Coords.ChangeWaypointMode.X - 1, Coords.ChangeWaypointMode.Y - 1,
 			Coords.ChangeWaypointMode.Width + 2, Coords.ChangeWaypointMode.Height + 2)
@@ -367,7 +364,7 @@ function onTick()
 		local noButtonsPressed = not (dataPressed or changeWaypointMode)
 		-- Custom scrolling for the 1x1 and 1x2 screens
 		if h == 32 then
-			local scrollDown = scrollSRLatch(downPressed and noButtonsPressed, (upPressed and noButtonsPressed) or (not WaypointSet))
+			local scrollDown = scrollSRLatch(downPressed and noButtonsPressed, (upPressed and noButtonsPressed) or (not isWaypointSet()))
 			local scrollUp = not scrollDown
 			ScrollY = scrollCounter(scrollDown, scrollUp, 1, -21, 0, false)
 		else
@@ -380,7 +377,11 @@ function onTick()
 end
 
 function onDraw()
-	w, h = screen.getWidth(), screen.getHeight()
+	if w == 0 and h == 0 then
+		w, h = screen.getWidth(), screen.getHeight()
+		cx, cy = w / 2, h / 2
+		Coords = getCoordinates()
+	end
 
 	if ScreenMode == "Map" then
 		screen.setMapColorOcean(0, 0, 0, 2)
@@ -399,6 +400,7 @@ function onDraw()
 			screenWaypointTable[i] = { X = screenX, Y = screenY }
 		end
 
+		PointerX, PointerY = map.mapToScreen(StoredX, StoredY, Zoom, w, h, GPSX, GPSY)
 		if DrawLine then
 			screen.setColor(LineRGB[1], LineRGB[2], LineRGB[3])
 			screen.drawLine(PointerX, PointerY, screenWaypointTable[1].X, screenWaypointTable[1].Y)
@@ -406,7 +408,7 @@ function onDraw()
 				screen.drawLine(screenWaypointTable[i - 1].X, screenWaypointTable[i - 1].Y, screenWaypointTable[i].X, screenWaypointTable[i].Y)
 			end
 		end
-		if WaypointSet then
+		if isWaypointSet() then
 			screen.setColor(255, 127, 0)
 			for i = 1, #screenWaypointTable do
 				screen.drawRectF(screenWaypointTable[i].X, screenWaypointTable[i].Y, 2, 2)
@@ -437,7 +439,7 @@ function onDraw()
 			drawPlus(Coords.Plus.X + i, Coords.Plus.Y)
 			setHighlightColor(ResetMovement, i)
 			drawText(Coords.Reset.X + i, Coords.Reset.Y, "R") -- Data button is at the end of onDraw()
-			if WaypointSet then
+			if isWaypointSet() then
 				setHighlightColor(LinePressed, i)
 				drawText(Coords.Line.X + i, Coords.Line.Y, "L")
 				if WaypointMode == "Multiple" then
@@ -459,7 +461,7 @@ function onDraw()
 			drawText(Coords.Ycoordinate.X + i, Coords.Ycoordinate.Y + ScrollY, string.format("%.0f", GPSY), 1, false, Coords.Ycoordinate.Width, 0)
 			drawText(Coords.Heading.X + i, Coords.Heading.Y + ScrollY, string.format("%.0f", CompassDegrees), 1, false, Coords.Heading.Width, 0)
 			screen.drawCircle((cx - 5) + round((11 - degreeDigits * 4) / 2) + (degreeDigits * 4 + 1) + i, Coords.Heading.Y + ScrollY, 1)
-			if WaypointSet then
+			if isWaypointSet() then
 				drawText(Coords.DistanceEstimate.X + i, Coords.DistanceEstimate.Y + ScrollY,
 					string.format("%." .. 3 - string.len(math.floor(Distance)) .. "f", Distance) .. " km", 1, false, Coords.DistanceEstimate.Width, 0)
 				if Speed >= SpeedThreshold and hours > 0 then
