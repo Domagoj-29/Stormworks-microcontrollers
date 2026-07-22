@@ -79,10 +79,10 @@ function drawTarget(target)
 				screen.drawRectF(targetDataX + 1, bearingY + 1, 1, 1)
 				--screen.drawCircle((screenX - offsetX) + textSpace + 1 + i, screenY - offsetY2, 1)
 			else
-				screen.drawRectF(bearingRightX, bearingY, 1, 1)
-				screen.drawRectF(bearingRightX + 2, bearingY, 1, 1)
-				screen.drawRectF(bearingRightX + 1, bearingY - 1, 1, 1)
-				screen.drawRectF(bearingRightX + 1, bearingY + 1, 1, 1)
+				screen.drawRectF(bearingRightX - 3, bearingY, 1, 1)
+				screen.drawRectF(bearingRightX - 1, bearingY, 1, 1)
+				screen.drawRectF(bearingRightX - 2, bearingY - 1, 1, 1)
+				screen.drawRectF(bearingRightX - 2, bearingY + 1, 1, 1)
 				--screen.drawCircle(screenX + 15 + i, screenY - offsetY2, 1)
 			end
 		end
