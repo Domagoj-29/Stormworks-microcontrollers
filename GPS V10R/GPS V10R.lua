@@ -311,13 +311,14 @@ function onTick()
 	targetHorizontalDistance, targetBearing = input.getNumber(24), input.getNumber(25)
 	targetWeight = input.getNumber(26)
 	isPressed = input.getBool(1)	  -- This does NOT need old screen mode checking
+	insertWaypointPulse = input.getBool(2)
 
 	-- Radar target table insertion
 	if targetX ~= OldTargetX and targetX ~= 0 then
 		table.insert(Target, {X = targetX, Y = targetY, Distance = targetHorizontalDistance, Bearing = targetBearing, Mass = targetWeight,
 			Time = 1, Toggle = false, ToggleFunction = createToggle()})
 	end
-	OldTargetX=targetX
+	OldTargetX = targetX
 	-- Radar target table removal
 	for k, v in pairs(Target) do
 		v.Time = v.Time - 0.001
@@ -327,17 +328,11 @@ function onTick()
 	end
 
 	-- Waypoint table insertion
-	KeypadSet = waypointX ~= 0 or waypointY ~= 0
 	if WaypointMode == "S" then
 		WaypointTable[1].X = waypointX
 		WaypointTable[1].Y = waypointY
-	elseif not patternMatch(waypointX, waypointY, WaypointTable) and WaypointMode == "M" then
-		if not isWaypointSet() then
-			WaypointTable[1].X = waypointX
-			WaypointTable[1].Y = waypointY
-		elseif #WaypointTable < 8 and KeypadSet then
-			table.insert(WaypointTable, { X = waypointX, Y = waypointY })
-		end
+	elseif insertWaypointPulse and #WaypointTable < 8 and (waypointX ~= 0 and waypointY ~= 0) and not patternMatch(waypointX, waypointY, WaypointTable) then
+		table.insert(WaypointTable, { X = waypointX, Y = waypointY })
 	end
 
 	isSpeedNegative = speedSRLatch(directionalSpeed < -1, directionalSpeed > 1) and InvertHeading
@@ -372,11 +367,11 @@ function onTick()
 		ClearAll=clearSRLatch(clearPressed and WaypointMode == "M" and isWaypointSet(), not isPressed)
 		-- Waypoint removal
 		if ClearAll then
-			clearWaypointTable(WaypointTable, waypointX, waypointY)
+			clearWaypointTable(WaypointTable, 0, 0)
 		elseif Distance * 1000 <= WaypointClearingRange then
 			table.remove(WaypointTable, 1)
 			if #WaypointTable < 1 then
-				table.insert(WaypointTable,{X = waypointX, Y = waypointY})
+				table.insert(WaypointTable,{X = 0, Y = 0})
 			end
 		end
 
@@ -421,10 +416,10 @@ function onTick()
 		changeWaypointModePulse = changeModePulse(changeWaypointMode)
 		if changeWaypointModePulse and WaypointMode == "S" then
 			WaypointMode = "M"
-			clearWaypointTable(WaypointTable, waypointX, waypointY)
+			clearWaypointTable(WaypointTable, 0, 0)
 		elseif changeWaypointModePulse and WaypointMode == "M" then
 			WaypointMode = "S"
-			clearWaypointTable(WaypointTable, waypointX, waypointY)
+			clearWaypointTable(WaypointTable, 0, 0)
 		end
 
 		noButtonsPressed = not (dataPressed or changeWaypointMode)
@@ -513,7 +508,7 @@ function onDraw()
 				setHighlightColor(LinePressed, i)
 				drawText(Coords.Line.X + i, Coords.Line.Y, "L")
 				if WaypointMode == "M" then
-					setHighlightColor(ClearAll and KeypadSet, i)
+					setArrayColor(UIRGB, i)
 					drawText(Coords.Clear.X + i, Coords.Clear.Y, "C")
 				end
 			end
