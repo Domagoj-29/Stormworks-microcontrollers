@@ -163,8 +163,8 @@ function onTick()
 	ScreenMode = (dataToggled) and "Data" or "Map"
 
 	if ScreenMode == "Map" then
-		local zoomDecrease = isPressed and touchRectF(inputX, inputY, Coords.Minus.X - 1, Coords.Minus.Y - 1, Coords.Minus.Width + 2, Coords.Minus.Height + 2)
-		local zoomIncrease = isPressed and touchRectF(inputX, inputY, Coords.Plus.X - 1, Coords.Plus.Y - 1, Coords.Plus.Width + 2, Coords.Plus.Height + 2)
+		local zoomDecrease = isPressed and touchRectF(inputX, inputY, Coords.Minus.X - 1, Coords.Minus.Y - 1, Coords.Minus.Width + 3, Coords.Minus.Height + 3)
+		local zoomIncrease = isPressed and touchRectF(inputX, inputY, Coords.Plus.X - 1, Coords.Plus.Y - 1, Coords.Plus.Width + 2, Coords.Plus.Height + 3)
 		local zooming = zoomDecrease or zoomIncrease
 		DrawZoomOverlay = zoomingCapacitor(zooming, 0, 60)
 		local zoomTimeMultiplier = zoomTimeCounter(false, zooming, 0.1, 1, 3, not zooming)
