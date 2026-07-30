@@ -270,19 +270,15 @@ function onTick()
 	local inputX, inputY = input.getNumber(18), input.getNumber(19)
 	local waypointX, waypointY = input.getNumber(20), input.getNumber(21)
 	local isPressed = input.getBool(1)	  -- This does NOT need old screen mode checking
+	local insertWaypointPulse = input.getBool(2)
 
 	-- Waypoint table insertion
 	KeypadSet = waypointX ~= 0 or waypointY ~= 0
 	if WaypointMode == "Single" then
 		WaypointTable[1].X = waypointX
 		WaypointTable[1].Y = waypointY
-	elseif not patternMatch(waypointX, waypointY, WaypointTable) and WaypointMode == "Multiple" then
-		if not isWaypointSet() then
-			WaypointTable[1].X = waypointX
-			WaypointTable[1].Y = waypointY
-		elseif #WaypointTable < 8 and KeypadSet then
-			table.insert(WaypointTable, { X = waypointX, Y = waypointY })
-		end
+	elseif not patternMatch(waypointX, waypointY, WaypointTable) and #WaypointTable < 8 and insertWaypointPulse then
+		table.insert(WaypointTable, { X = waypointX, Y = waypointY })
 	end
 
 	local isSpeedNegative = speedSRLatch(directionalSpeed < -1, directionalSpeed > 1) and InvertHeading
@@ -317,11 +313,11 @@ function onTick()
 		ClearAll = clearSRLatch(clearPressed and WaypointMode == "Multiple" and isWaypointSet(), not isPressed)
 		-- Waypoint removal
 		if ClearAll then
-			clearWaypointTable(WaypointTable, waypointX, waypointY)
+			clearWaypointTable(WaypointTable, 0, 0)
 		elseif Distance * 1000 <= WaypointClearingRange then
 			table.remove(WaypointTable, 1)
 			if #WaypointTable == 0 then
-				table.insert(WaypointTable,{X = waypointX, Y = waypointY})
+				table.insert(WaypointTable, {X = 0, Y = 0})
 			end
 		end
 
@@ -355,10 +351,10 @@ function onTick()
 		local changeWaypointModePulse = changeModePulse(changeWaypointMode)
 		if changeWaypointModePulse and WaypointMode == "Single" then
 			WaypointMode = "Multiple"
-			clearWaypointTable(WaypointTable, waypointX, waypointY)
+			clearWaypointTable(WaypointTable, 0, 0)
 		elseif changeWaypointModePulse and WaypointMode == "Multiple" then
 			WaypointMode = "Single"
-			clearWaypointTable(WaypointTable, waypointX, waypointY)
+			clearWaypointTable(WaypointTable, 0, 0)
 		end
 
 		local noButtonsPressed = not (dataPressed or changeWaypointMode)
