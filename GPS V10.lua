@@ -273,11 +273,10 @@ function onTick()
 	local insertWaypointPulse = input.getBool(2)
 
 	-- Waypoint table insertion
-	KeypadSet = waypointX ~= 0 or waypointY ~= 0
 	if WaypointMode == "Single" then
 		WaypointTable[1].X = waypointX
 		WaypointTable[1].Y = waypointY
-	elseif not patternMatch(waypointX, waypointY, WaypointTable) and #WaypointTable < 8 and insertWaypointPulse then
+	elseif insertWaypointPulse and #WaypointTable < 8 and (waypointX ~= 0 or waypointY ~= 0) and not patternMatch(waypointX, waypointY, WaypointTable) then
 		table.insert(WaypointTable, { X = waypointX, Y = waypointY })
 	end
 
@@ -439,7 +438,7 @@ function onDraw()
 				setHighlightColor(LinePressed, i)
 				drawText(Coords.Line.X + i, Coords.Line.Y, "L")
 				if WaypointMode == "Multiple" then
-					setHighlightColor(ClearAll and KeypadSet, i)
+					setArrayColor(UIRGB, i)
 					drawText(Coords.Clear.X + i, Coords.Clear.Y, "C")
 				end
 			end
