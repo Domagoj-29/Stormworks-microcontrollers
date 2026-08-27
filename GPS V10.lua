@@ -81,7 +81,7 @@ local function setArrayColor(array, i)
 	if i == 1 then
 		screen.setColor(0, 0, 0)
 	elseif i == 0 then
-		screen.setColor(array[1], array[2], array[3])
+		screen.setColor(array[1], array[2], array[3], array[4] or 255)
 	end
 end
 local function setHighlightColor(isHighlighted, i)
@@ -96,6 +96,9 @@ local function setHighlightColor(isHighlighted, i)
 end
 local function round(x)
 	return math.floor(x + 0.5)
+end
+local function getBackgroundColor(i)
+	return {20, 20, 20, 255 - i / (h - 2) * 50}
 end
 
 -- onTick functions
@@ -123,6 +126,7 @@ local function getCoordinates()
 	local symbolY = h - 6
 	local textX = cx - 14
 	local verticalGap = clamp((h / 32 - 1), 0, 2) * 2
+	local estimateOffset = h == 32 and 7 or 0
 	return
 	{
 		Up = { X = 0, Y = 0, Width = w, Height = cy - 2 },
@@ -141,8 +145,8 @@ local function getCoordinates()
 		Xcoordinate = { X = textX, Y = cy - 13 - verticalGap * 4, Width = textWidth(7), Height = charH },
 		Ycoordinate = { X = textX, Y = cy - 6 - verticalGap * 3, Width = textWidth(7), Height = charH },
 		Heading = { X = cx - 6, Y = cy + 1 - verticalGap * 2, Width = textWidth(3), Height = charH },
-		DistanceEstimate = { X = textX, Y = cy + 8 - verticalGap, Width = textWidth(7), Height = charH },
-		TimeEstimate = { X = textX, Y = cy + 15, Width = textWidth(7), Height = charH },
+		DistanceEstimate = { X = textX, Y = cy + 8 - verticalGap + estimateOffset, Width = textWidth(7), Height = charH },
+		TimeEstimate = { X = textX, Y = cy + 15 + estimateOffset, Width = textWidth(7), Height = charH },
 		ChangeWaypointMode = { X = w - 5, Y = symbolY, Width = textWidth(1), Height = charH }
 	}
 end
@@ -160,8 +164,18 @@ local function createSRLatch()
 	end
 end
 EstimateLimit = 359940 -- 99h 59m
-local function waypointDistance(gpsX, gpsY, waypointX, waypointY, speed)
-	local distance = clamp(math.sqrt((waypointX - gpsX) ^ 2 + (waypointY - gpsY) ^ 2) / 1000, 0, 256)
+local function distanceBetweenPoints(startX, startY, endX, endY)
+	return clamp(math.sqrt((endX - startX) ^ 2 + (endY - startY) ^ 2) / 1000, 0, 256)
+end
+local function waypointDistance(gpsX, gpsY, waypointTable, speed)
+	local distance = 0
+	for i = 1, #waypointTable do
+		if i == 1 then
+			distance = distance + distanceBetweenPoints(gpsX, gpsY, waypointTable[1].X, waypointTable[1].Y)
+		else
+			distance = distance + distanceBetweenPoints(waypointTable[i - 1].X, waypointTable[i - 1].Y, waypointTable[i].X, waypointTable[i].Y)
+		end
+	end
 	local estimate = clamp((distance / (speed * 3.6)) * 3600, 0, EstimateLimit)
 	return distance, estimate
 end
@@ -273,7 +287,7 @@ function onTick()
 	local insertWaypointPulse = input.getBool(2)
 
 	-- Waypoint table insertion
-	if WaypointMode == "Single" then
+	if insertWaypointPulse and WaypointMode == "Single" then
 		WaypointTable[1].X = waypointX
 		WaypointTable[1].Y = waypointY
 	elseif insertWaypointPulse and #WaypointTable < 8 and (waypointX ~= 0 or waypointY ~= 0) and not patternMatch(waypointX, waypointY, WaypointTable) then
@@ -287,7 +301,7 @@ function onTick()
 
 	Distance, Estimate = 0, 0
 	if isWaypointSet() then
-		Distance, Estimate = waypointDistance(GPSX, GPSY, WaypointTable[1].X, WaypointTable[1].Y, Speed)
+		Distance, Estimate = waypointDistance(GPSX, GPSY, WaypointTable, Speed)
 	end
 
 	local upPressed = isPressed and touchRectF(inputX, inputY, Coords.Up.X - 1, Coords.Up.Y - 1, Coords.Up.Width + 2, Coords.Up.Height + 2)
@@ -309,7 +323,7 @@ function onTick()
 		ResetMovement = isPressed and touchRectF(inputX, inputY, Coords.Reset.X - 1, Coords.Reset.Y - 1, Coords.Reset.Width + 2, Coords.Reset.Height + 3)
 
 		local clearPressed = isPressed and touchRectF(inputX, inputY, Coords.Clear.X - 1, Coords.Clear.Y - 1, Coords.Clear.Width + 2, Coords.Clear.Height + 3)
-		ClearAll = clearSRLatch(clearPressed and WaypointMode == "Multiple" and isWaypointSet(), not isPressed)
+		ClearAll = clearSRLatch(clearPressed and isWaypointSet(), not isPressed)
 		-- Waypoint removal
 		if ClearAll then
 			clearWaypointTable(WaypointTable, 0, 0)
@@ -361,7 +375,7 @@ function onTick()
 		if h == 32 then
 			local scrollDown = scrollSRLatch(downPressed and noButtonsPressed, (upPressed and noButtonsPressed) or (not isWaypointSet()))
 			local scrollUp = not scrollDown
-			ScrollY = scrollCounter(scrollDown, scrollUp, 1, -21, 0, false)
+			ScrollY = scrollCounter(scrollDown, scrollUp, 1, -28, 0, false)
 		else
 			ScrollY = 0
 		end
@@ -437,15 +451,15 @@ function onDraw()
 			if isWaypointSet() then
 				setHighlightColor(LinePressed, i)
 				drawText(Coords.Line.X + i, Coords.Line.Y, "L")
-				if WaypointMode == "Multiple" then
-					setArrayColor(UIRGB, i)
-					drawText(Coords.Clear.X + i, Coords.Clear.Y, "C")
-				end
+				setArrayColor(UIRGB, i)
+				drawText(Coords.Clear.X + i, Coords.Clear.Y, "C")
 			end
 		end
 	elseif ScreenMode == "Data" then
-		screen.setColor(20, 20, 20)
-		screen.drawClear()
+		for i = 1, h - 2 do
+			screen.setColor(20, 20, 20, 255 - i / (h - 2) * 50)
+			screen.drawRectF(1, i, w - 2, 1)
+		end
 
 		local hours, minutes = math.floor(Estimate / 3600), Estimate % 3600 / 60
 		local degreeDigits = string.len(string.format("%.0f", CompassDegrees))
@@ -467,24 +481,13 @@ function onDraw()
 			end
 		end
 
-		-- Invisible rectangles for scrolling
-		if h == 32 then
-			screen.setColor(20, 20, 20)
-			screen.drawRectF(0, 0, w, 2)
-			screen.drawRectF(0, 23, w, 9)
-		end
-
 		for i = 1, 0, -1 do
 			setArrayColor(UIRGB, i)
 			drawText(Coords.ChangeWaypointMode.X + i, Coords.ChangeWaypointMode.Y, WaypointMode:sub(1,1))
 		end
 		-- Background details
 		screen.setColor(25, 25, 25)
-		screen.drawRectF(0, 0, w, 1)
-		screen.drawRectF(0, 0, 1, h)
-		screen.drawRectF(0, h - 1, w, 1)
-		screen.setColor(15, 15, 15)
-		screen.drawRectF(w - 1, 0, 1, h)
+		screen.drawRect(0, 0, w - 1, h - 1)
 	end
 	-- Data button
 	for i = 1, 0, -1 do
