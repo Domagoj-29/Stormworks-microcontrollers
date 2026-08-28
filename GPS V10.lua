@@ -97,8 +97,8 @@ end
 local function round(x)
 	return math.floor(x + 0.5)
 end
-local function getBackgroundColor(i)
-	return {20, 20, 20, 255 - i / (h - 2) * 50}
+local function getBackgroundColor(y)
+	return {20, 20, 20, 255 - y / (h - 2) * 50}
 end
 
 -- onTick functions
@@ -457,7 +457,7 @@ function onDraw()
 		end
 	elseif ScreenMode == "Data" then
 		for i = 1, h - 2 do
-			screen.setColor(20, 20, 20, 255 - i / (h - 2) * 50)
+			screen.setColor(getBackgroundColor(i))
 			screen.drawRectF(1, i, w - 2, 1)
 		end
 
