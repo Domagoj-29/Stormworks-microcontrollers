@@ -137,7 +137,7 @@ function setHighlightColor(isHighlighted, i)
 	end
 end
 function setBackgroundColor(y)
-	screen.setColor(20, 20, 20, 255 - y / (h - 2) * 50)
+	screen.setColor(20, 20, 20, 255 - y / (h - 2) * 120)
 end
 
 -- onTick functions
@@ -358,13 +358,20 @@ function onTick()
 	if isWaypointSet() then
 		Distance, Estimate = waypointDistance(GPSX, GPSY, WaypointTable, Speed)
 	end
+	-- Waypoint table removal
+	if Distance * 1000 <= WaypointClearingRange then
+		table.remove(WaypointTable, 1)
+		if #WaypointTable < 1 then
+			table.insert(WaypointTable,{X = 0, Y = 0})
+		end
+	end
 
 	upPressed = touchRectF(isPressed, inputX, inputY, Coords.Up.X - 1, Coords.Up.Y - 1, Coords.Up.Width + 2, Coords.Up.Height + 2)
 	downPressed = touchRectF(isPressed, inputX, inputY, Coords.Down.X - 1, Coords.Down.Y - 1, Coords.Down.Width + 2, Coords.Down.Height + 2)
 	leftPressed = touchRectF(isPressed, inputX, inputY, Coords.Left.X - 1, Coords.Left.Y - 1, Coords.Left.Width + 2, Coords.Left.Height + 2)
 	rightPressed = touchRectF(isPressed, inputX, inputY, Coords.Right.X - 1, Coords.Right.Y - 1, Coords.Right.Width + 2, Coords.Right.Height + 2)
 
-	dataPressed = touchRectF(isPressed, inputX, inputY, Coords.Data.X-1, Coords.Data.Y-1, Coords.Data.Width + 2, Coords.Data.Height + 3)
+	dataPressed = touchRectF(isPressed, inputX, inputY, Coords.Data.X - 1, Coords.Data.Y - 1, Coords.Data.Width + 2, Coords.Data.Height + 3)
 	DataToggled = dataButtonToToggle(dataPressed)
 	ScreenMode = (DataToggled) and "D" or "M" -- "Data" or "Map"
 
@@ -379,14 +386,8 @@ function onTick()
 
 		clearPressed = touchRectF(isPressed, inputX, inputY, Coords.Clear.X - 1, Coords.Clear.Y - 1, Coords.Clear.Width + 2, Coords.Clear.Height + 3)
 		ClearAll=clearSRLatch(clearPressed and isWaypointSet(), not isPressed)
-		-- Waypoint removal
 		if ClearAll then
 			clearWaypointTable(WaypointTable, 0, 0)
-		elseif Distance * 1000 <= WaypointClearingRange then
-			table.remove(WaypointTable, 1)
-			if #WaypointTable < 1 then
-				table.insert(WaypointTable,{X = 0, Y = 0})
-			end
 		end
 
 		LinePressed = touchRectF(isPressed, inputX, inputY, Coords.Line.X - 1, Coords.Line.Y - 1, Coords.Line.Width + 2, Coords.Line.Height + 3)
@@ -526,6 +527,8 @@ function onDraw()
 			end
 		end
 	elseif ScreenMode == "D" then
+		screen.setColor(0, 0, 0)
+		screen.drawClear()
 		for i = 1, h - 2 do
 			setBackgroundColor(i)
 			screen.drawRectF(1, i, w - 2, 1)
