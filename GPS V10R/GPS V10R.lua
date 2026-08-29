@@ -145,6 +145,12 @@ end
 function isWaypointSet()
 	return WaypointTable[1].X ~= 0 or WaypointTable[1].Y ~= 0
 end
+function clamp(value, min, max)
+	return math.max(min, math.min(value, max))
+end
+function distanceBetweenPoints(startX, startY, endX, endY)
+	return clamp(math.sqrt((endX - startX) ^ 2 + (endY - startY) ^ 2) / 1000, 0, 256)
+end
 function patternMatch(x, y, table)
 	for i = 1, #table do
 		if table[i].X == x and table[i].Y == y then
@@ -152,9 +158,6 @@ function patternMatch(x, y, table)
 		end
 	end
 	return false
-end
-function clamp(value, min, max)
-	return math.max(min, math.min(value, max))
 end
 function textWidth(chars)
 	return 4 * (chars - 1) + 3
@@ -198,21 +201,6 @@ function createSRLatch()
 		end
 		return output
 	end
-end
-function distanceBetweenPoints(startX, startY, endX, endY)
-	return clamp(math.sqrt((endX - startX) ^ 2 + (endY - startY) ^ 2) / 1000, 0, 256)
-end
-function waypointDistance(gpsX, gpsY, waypointTable, speed)
-	distance = 0
-	for i = 1, #waypointTable do
-		if i == 1 then
-			distance = distance + distanceBetweenPoints(gpsX, gpsY, waypointTable[1].X, waypointTable[1].Y)
-		else
-			distance = distance + distanceBetweenPoints(waypointTable[i - 1].X, waypointTable[i - 1].Y, waypointTable[i].X, waypointTable[i].Y)
-		end
-	end
-	estimate = clamp((distance / (speed * 3.6)) * 3600, 0, 359940) -- 99h 59m
-	return distance, estimate
 end
 function touchRectF(isPressed, inputX, inputY, x, y, rectW, rectH)
 	return
@@ -354,12 +342,20 @@ function onTick()
 		CompassDegrees = (CompassDegrees + 180) % 360
 	end
 
-	Distance, Estimate = 0, 0
+	TotalDistance, ClearDistance, Estimate = 0, 0, 0
 	if isWaypointSet() then
-		Distance, Estimate = waypointDistance(GPSX, GPSY, WaypointTable, Speed)
+		for i = 1, #WaypointTable do
+			if i == 1 then
+				TotalDistance = TotalDistance + distanceBetweenPoints(GPSX, GPSY, WaypointTable[1].X, WaypointTable[1].Y)
+				ClearDistance = TotalDistance
+			else
+				TotalDistance = TotalDistance + distanceBetweenPoints(WaypointTable[i - 1].X, WaypointTable[i - 1].Y, WaypointTable[i].X, WaypointTable[i].Y)
+			end
+		end
+		Estimate = clamp((TotalDistance / (Speed * 3.6)) * 3600, 0, 359940) -- 99h 59m
 	end
 	-- Waypoint table removal
-	if Distance * 1000 <= WaypointClearingRange then
+	if ClearDistance * 1000 <= WaypointClearingRange then
 		table.remove(WaypointTable, 1)
 		if #WaypointTable < 1 then
 			table.insert(WaypointTable,{X = 0, Y = 0})
@@ -545,7 +541,7 @@ function onDraw()
 			screen.drawCircle((cx - 5) + round((11 - degreeDigits * 4) / 2) + (degreeDigits * 4 + 1) + i, Coords.Heading.Y + ScrollY, 1)
 			if isWaypointSet() then
 				drawText(Coords.DistanceEstimate.X + i, Coords.DistanceEstimate.Y + ScrollY,
-					string.format("%." .. 3 - string.len(math.floor(Distance)) .. "f", Distance) .. " km", Coords.DistanceEstimate.Width, 0)
+					string.format("%." .. 3 - string.len(math.floor(TotalDistance)) .. "f", TotalDistance) .. " km", Coords.DistanceEstimate.Width, 0)
 				if Speed >= SpeedThreshold and hours > 0 then
 					drawText(Coords.TimeEstimate.X + i, Coords.TimeEstimate.Y + ScrollY, string.format("%dh %.0fm", hours, minutes), Coords.TimeEstimate.Width, 0)
 				elseif Speed >= SpeedThreshold and round(minutes)>0 then
