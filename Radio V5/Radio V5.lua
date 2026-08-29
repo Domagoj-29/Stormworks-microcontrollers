@@ -12,6 +12,9 @@ local function propertyToColors(propertyName) -- Colors are stored as "255,255,2
 	end
 	return tempTable
 end
+local function setBackgroundColor(y)
+	screen.setColor(20, 20, 20, 255 - y / (h - 2) * 120)
+end
 local function setColor(i, isHighlighted)
 	isHighlighted = isHighlighted or false
 	if isHighlighted and i == 0 then
@@ -87,8 +90,20 @@ local function dynamicRounding(number)
 	return roundedNumber
 end
 local function drawInvisibleRectangles()
+	local lowerRectangleY = 6 + ScrollLimit
+	local lowerRectangleHeight = h - (6 + ScrollLimit)
+	screen.setColor(0, 0, 0)
 	screen.drawRectF(1, 1, w - 2, 6)
-	screen.drawRectF(1, 7 + ScrollLimit - 1, w - 2, h - (7 + ScrollLimit - 1))
+	screen.drawRectF(1, lowerRectangleY, w - 2, lowerRectangleHeight)
+
+	for i = 1, 6 do
+		setBackgroundColor(i)
+		screen.drawRectF(1, i, w - 2, 1)
+	end
+	for i = lowerRectangleY, lowerRectangleY + lowerRectangleHeight - 1 do
+		setBackgroundColor(i)
+		screen.drawRectF(1, i, w - 2, 1)
+	end
 end
 local function boolToString(value)
 	if value then
@@ -129,14 +144,6 @@ local function drawSignalStrengthIndicator(signalStrength, x, y, width, NotVideo
 			screen.drawRectF(x - offsetX, y, width, i)
 		end
 	end
-end
-local function drawBackgroundDetails()
-	screen.setColor(25, 25, 25)
-	screen.drawRectF(0, 0, w, 1)
-	screen.drawRectF(0, 0, 1, h)
-	screen.drawRectF(0, h - 1, w, 1)
-	screen.setColor(15, 15, 15)
-	screen.drawRectF(w - 1, 0, 1, h)
 end
 
 -- onTick functions
@@ -432,8 +439,12 @@ function onDraw()
 	end
 
 	if ScreenMode~="VideoData" then
-		screen.setColor(20, 20, 20)
+		screen.setColor(0, 0, 0)
 		screen.drawClear()
+		for i = 1, h - 2 do
+			setBackgroundColor(i)
+			screen.drawRectF(1, i, w - 2, 1)
+		end
 	end
 
 	local charH = 5
@@ -473,7 +484,6 @@ function onDraw()
 				drawText(Coords.Channel.X + i, Coords.Channel.Y + (k * (charH + textGap)) - NumberDataScrollY, dynamicRounding(DataChannel[j].Number), 1, false, w - 3, 1)
 			end
 		end
-		screen.setColor(20, 20, 20)
 		drawInvisibleRectangles()
 		for i = 1, 0, -1 do
 			setColor(i)
@@ -488,7 +498,6 @@ function onDraw()
 				drawText(Coords.Channel.X + i, Coords.Channel.Y + (k * (charH + textGap)) - LogicDataScrollY, boolToString(DataChannel[j].Logic), 1, false, w - 3, 1)
 			end
 		end
-		screen.setColor(20, 20, 20)
 		drawInvisibleRectangles()
 		for i = 1, 0, -1 do
 			setColor(i)
@@ -509,6 +518,8 @@ function onDraw()
 	end
 	drawSignalStrengthIndicator(SignalStrength, Coords.SignalStrength.X, Coords.SignalStrength.Y, Coords.SignalStrength.Width, ScreenMode ~= "VideoData")
 	if ScreenMode ~= "VideoData" then
-		drawBackgroundDetails()
+		-- Background details
+		screen.setColor(25, 25, 25)
+		screen.drawRect(0, 0, w - 1, h - 1)
 	end
 end
