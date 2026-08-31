@@ -158,7 +158,7 @@ function onTick()
 	cx, cy = w / 2, h / 2
 	Coords = getCoordinates() -- Coords stores static coordinates
 
-	local dataPressed = isPressed and touchRectF(inputX, inputY, Coords.Data.X-1, Coords.Data.Y-1, Coords.Data.Width + 2, Coords.Data.Height + 2)
+	local dataPressed = isPressed and touchRectF(inputX, inputY, Coords.Data.X-1, Coords.Data.Y-1, Coords.Data.Width + 2, Coords.Data.Height + 3)
 	local dataToggled = dataButtonToToggle(dataPressed)
 	ScreenMode = (dataToggled) and "Data" or "Map"
 
